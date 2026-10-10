@@ -293,29 +293,6 @@
     }
 
     // —— Expansion UI ——
-    function renderMat() {
-      const mat = document.getElementById('mat');
-      mat.innerHTML = '';
-      const focusJ = step <= 2 ? step : -1;
-      for (let i = 0; i < 3; i++) {
-        for (let j = 0; j < 3; j++) {
-          const inp = document.createElement('input');
-          inp.type = 'number';
-          inp.value = M[i][j];
-          if (focusJ >= 0) {
-            if (i === 0 && j === focusJ) inp.classList.add('hi');
-            else if (i === 0 || j === focusJ) inp.classList.add('cut');
-            else inp.classList.add('keep');
-          }
-          inp.addEventListener('input', () => {
-            M[i][j] = +inp.value || 0;
-            renderAll();
-          });
-          mat.appendChild(inp);
-        }
-      }
-    }
-
     function renderTabs() {
       document.querySelectorAll('#tabs button').forEach(btn => {
         btn.classList.toggle('on', +btn.dataset.j === step);
@@ -401,19 +378,38 @@
       });
     }
 
+    /** Правило знака (+/−) і знак самого добутку — різні речі: + (−5) = −5 */
+    function fmtRuleApply(ruleSign, prod) {
+      const contrib = ruleSign * prod;
+      const prodBit = prod < 0 ? `(${prod})` : String(prod);
+      const op = ruleSign > 0 ? '+' : '−';
+      return `${op} ${prodBit} = ${contrib}`;
+    }
+
+    function fmtAccum(vals) {
+      return vals.map((v, i) => {
+        if (i === 0) return String(v);
+        return v < 0 ? `− ${Math.abs(v)}` : `+ ${v}`;
+      }).join(' ');
+    }
+
     function renderTriSteps() {
       const box = document.getElementById('triSteps');
       if (triStep === 6) {
         const parts = TRI.map((t, i) => {
           const p = productOf(t.cells);
           const c = triContrib(i);
-          return `<p class="step-line ${t.sign > 0 ? 'plus-border' : 'minus-border'}">${t.sign > 0 ? '+' : '−'} ${Math.abs(p)} <span class="muted">(${t.name})</span> → <strong>${c}</strong></p>`;
+          const border = t.sign > 0 ? 'plus-border' : 'minus-border';
+          return `<p class="step-line ${border}">` +
+            `<span class="muted">${t.name}:</span> ${p} → за правилом ${fmtRuleApply(t.sign, p)} ` +
+            `→ внесок <strong>${c}</strong></p>`;
         }).join('');
+        const contribs = TRI.map((_, i) => triContrib(i));
         box.innerHTML = `
           <p class="title">Усі шість добутків</p>
           ${parts}
           <div class="sum-box">
-            det = сума = <span class="final">${detTriangles()}</span>
+            det = ${fmtAccum(contribs)} = <span class="final">${detTriangles()}</span>
             <span class="muted"> (перевірка розкладом: ${det3()})</span>
           </div>`;
         return;
@@ -423,32 +419,107 @@
       const vals = t.cells.map(([r, c]) => M[r][c]);
       const prod = productOf(t.cells);
       const contrib = triContrib(triStep);
-      const signWord = t.sign > 0 ? 'додаємо' : 'віднімаємо';
       const border = t.sign > 0 ? 'plus-border' : 'minus-border';
+      const ruleName = t.sign > 0 ? 'додаємо до суми' : 'віднімаємо від суми (тобто множимо на −1)';
 
       box.innerHTML = `
-        <p class="title">${t.sign > 0 ? 'Плюс' : 'Мінус'} · ${t.label}</p>
+        <p class="title">${t.sign > 0 ? 'Правило «+»' : 'Правило «−»'} · ${t.label}</p>
         <p class="step-line ${border}">
-          Добуток: ${vals.join(' · ')} = <strong>${prod}</strong>
+          Добуток елементів: ${vals.join(' · ')} = <strong>${prod}</strong>
         </p>
         <p class="step-line ${border}">
-          ${t.name} → ${signWord}: <strong>${t.sign > 0 ? '+' : '−'}${Math.abs(prod)}</strong>
-          = внесок <strong>${contrib}</strong>
+          ${ruleName}: ${fmtRuleApply(t.sign, prod)}.<br>
+          Внесок у визначник: <strong>${contrib}</strong>
+          <span class="muted"> (${t.name})</span>
         </p>
         <div class="sum-box">
-          Накопичено:
-          ${TRI.slice(0, triStep + 1).map((_, i) => triContrib(i)).join(' + ')}
+          Накопичено: ${fmtAccum(TRI.slice(0, triStep + 1).map((_, i) => triContrib(i)))}
           ${triStep === 5 ? ` = <span class="final">${detTriangles()}</span>` : ' …'}
         </div>`;
     }
 
-    function renderAll() {
-      renderMat();
+    let matInputs = null;
+
+    function ensureMatInputs() {
+      const mat = document.getElementById('mat');
+      if (matInputs) return;
+      mat.innerHTML = '';
+      matInputs = [];
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          const inp = document.createElement('input');
+          inp.type = 'text';
+          inp.inputMode = 'decimal';
+          inp.autocomplete = 'off';
+          inp.setAttribute('aria-label', `a${i + 1}${j + 1}`);
+          inp.value = String(M[i][j]);
+          inp.addEventListener('input', () => {
+            const raw = inp.value.trim().replace(',', '.');
+            if (raw === '' || raw === '-' || raw === '.' || raw === '-.') return;
+            const v = Number(raw);
+            if (!Number.isFinite(v)) return;
+            M[i][j] = v;
+            updateMatHighlight();
+            renderTabs();
+            renderSteps();
+            renderTriGrid();
+            renderTriTabs();
+            renderTriSteps();
+          });
+          inp.addEventListener('change', () => {
+            const raw = inp.value.trim().replace(',', '.');
+            const v = Number(raw);
+            M[i][j] = Number.isFinite(v) ? v : 0;
+            inp.value = String(M[i][j]);
+            renderSoft();
+          });
+          matInputs.push(inp);
+          mat.appendChild(inp);
+        }
+      }
+    }
+
+    function syncMatInputsFromM() {
+      if (!matInputs) return;
+      matInputs.forEach((inp, idx) => {
+        if (document.activeElement === inp) return;
+        const i = Math.floor(idx / 3), j = idx % 3;
+        inp.value = String(M[i][j]);
+      });
+    }
+
+    function updateMatHighlight() {
+      if (!matInputs) return;
+      const focusJ = step <= 2 ? step : -1;
+      matInputs.forEach((inp, idx) => {
+        const i = Math.floor(idx / 3), j = idx % 3;
+        inp.classList.remove('hi', 'cut', 'keep');
+        if (focusJ >= 0) {
+          if (i === 0 && j === focusJ) inp.classList.add('hi');
+          else if (i === 0 || j === focusJ) inp.classList.add('cut');
+          else inp.classList.add('keep');
+        }
+      });
+    }
+
+    function renderMat() {
+      ensureMatInputs();
+      syncMatInputsFromM();
+      updateMatHighlight();
+    }
+
+    function renderSoft() {
+      updateMatHighlight();
       renderTabs();
       renderSteps();
       renderTriGrid();
       renderTriTabs();
       renderTriSteps();
+    }
+
+    function renderAll() {
+      renderMat();
+      renderSoft();
     }
 
     document.querySelectorAll('#tabs button').forEach(btn => {

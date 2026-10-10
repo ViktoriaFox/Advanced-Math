@@ -395,29 +395,53 @@
         total + ' ' + plural(total, ['тема', 'теми', 'тем']);
     })();
 
-    function openSim(file, title, btn) {
+    function openSim(file, title, btn, pushState) {
       const iframe = document.getElementById('simFrame');
       const pageTitle = document.getElementById('pageTitle');
       const startMsg = document.getElementById('startMessage');
 
       iframe.src = file;
+      iframe.title = title || 'Тема';
       pageTitle.innerText = title;
       if (startMsg) startMsg.style.display = 'none';
 
       document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
+      if (btn) btn.classList.add('selected');
+
+      const url = new URL(window.location.href);
+      url.searchParams.set('sim', file);
+      if (pushState !== false) {
+        history.pushState({ sim: file }, title, url);
+      } else {
+        history.replaceState({ sim: file }, title, url);
+      }
 
       if (window.innerWidth < 1100) {
         sidebar.classList.add('active');
       }
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
+    function openSimFromParam(pushState) {
       const simFile = new URLSearchParams(window.location.search).get('sim');
-      if (simFile) {
-        const targetBtn = document.querySelector(`button[onclick*='${simFile}']`);
-        if (targetBtn) targetBtn.click();
+      if (!simFile) return;
+      const targetBtn = document.querySelector(`button[onclick*='${simFile}']`);
+      if (targetBtn) {
+        const title = targetBtn.textContent.trim();
+        openSim(simFile, title, targetBtn, pushState);
       }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => openSimFromParam(false));
+    window.addEventListener('popstate', () => {
+      const simFile = new URLSearchParams(window.location.search).get('sim');
+      if (!simFile) {
+        document.getElementById('startMessage').style.display = '';
+        document.getElementById('simFrame').src = '';
+        document.getElementById('simFrame').title = '';
+        document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('selected'));
+        return;
+      }
+      openSimFromParam(false);
     });
   </script>
 </body>

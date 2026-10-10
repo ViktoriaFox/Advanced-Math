@@ -118,17 +118,16 @@
         </p>
         <p>
           <strong>Що означає det = 0?</strong>
-          Другий стовпець — це просто перший, помножений на якесь число
-          (наприклад, обидва (2, 1) і (4, 2) — бо 4=2·2 і 2=1·2).
-          Тоді на графіку стрілки лежать на одній прямій, площа = 0.
+          Стовпці <em>лінійно залежні</em>. Якщо обидва ненульові — один є кратним іншому
+          (наприклад (2, 1) і (4, 2)). Якщо є нульовий стовпець — залежність теж є,
+          навіть коли другий не є «розтягнутим» першим. На графіку площа паралелограма = 0.
         </p>
         <p>
-          Таку матрицю називають <em>виродженою</em>: рівняння на кшталт «знайди обернену матрицю»
-          розв’язку не має. Для курсу достатньо запам’ятати:
-          <strong>det = 0 → щось «зламалось», стовпці не незалежні.</strong>
+          Таку матрицю називають <em>виродженою</em>: оберненої матриці не існує.
+          Коротко: <strong>det = 0 → стовпці залежні, площа нульова.</strong>
         </p>
         <p style="color:var(--muted);font-size:0.92rem;margin-bottom:0">
-          Кнопка «Вироджена» нижче як раз такий приклад — порівняй числа в стовпцях.
+          Кнопка «Вироджена» — випадок двох ненульових пропорційних стовпців.
         </p>
       </div>
     </details>
@@ -187,28 +186,67 @@
       return [+a.value || 0, +b.value || 0, +c.value || 0, +d.value || 0];
     }
 
+    function nearZero(det, A, B, C, D) {
+      const scale = Math.max(
+        Math.abs(A * D), Math.abs(B * C),
+        Math.abs(A), Math.abs(B), Math.abs(C), Math.abs(D), 1
+      );
+      return Math.abs(det) <= 1e-10 * scale;
+    }
+
+    function colDependenceNote(A, B, C, D) {
+      const v1zero = A === 0 && C === 0;
+      const v2zero = B === 0 && D === 0;
+      if (v1zero && v2zero) {
+        return 'Обидва стовпці нульові — лінійно залежні.';
+      }
+      if (v1zero) {
+        return `Стовп.1 = (0, 0) — нульовий. Стовп.2 = (${B}, ${D}) будь-який: залежність є, хоч другий і не «кратний» першому у сенсі розтягу ненульового вектора.`;
+      }
+      if (v2zero) {
+        return `Стовп.2 = (0, 0) — нульовий. Стовп.1 = (${A}, ${C}). Залежність є.`;
+      }
+      // both nonzero and det≈0 ⇒ one is multiple of the other
+      let k = null;
+      if (A !== 0) k = B / A;
+      else if (C !== 0) k = D / C;
+      if (k != null && Number.isFinite(k)) {
+        return `Обидва ненульові й залежні: стовп.2 ≈ ${k} · стовп.1.`;
+      }
+      return 'Стовпці лінійно залежні (лежать на одній прямій).';
+    }
+
     function update() {
       const [A, B, C, D] = vals();
-      const det = A * D - B * C;
+      const detRaw = A * D - B * C;
+      const isZero = nearZero(detRaw, A, B, C, D);
+      const det = isZero ? 0 : detRaw;
+      const detLabel = isZero
+        ? (Math.abs(detRaw) > 0
+          ? `≈ <strong>0</strong> <span style="color:var(--muted);font-weight:400">(машинно ${detRaw}, похибка округлення)</span>`
+          : `<strong>0</strong>`)
+        : `<strong>${detRaw}</strong>`;
 
       document.getElementById('formula').innerHTML =
-        `det = <span style="color:var(--main)">${A}·${D}</span> − <span style="color:var(--anti)">${B}·${C}</span> = <strong>${det}</strong>`;
+        `det = <span style="color:var(--main)">${A}·${D}</span> − <span style="color:var(--anti)">${B}·${C}</span> = ${detLabel}`;
 
       document.getElementById('map').innerHTML =
         `Стовпець 1 → вектор <strong class="v1">(${A}, ${C})</strong> на графіку.<br>` +
         `Стовпець 2 → вектор <strong class="v2">(${B}, ${D})</strong>.<br>` +
-        `Затінена фігура — паралелограм на цих двох стрілках. Його площа = |det| = <strong>${Math.abs(det)}</strong>.`;
+        `Затінена фігура — паралелограм на цих двох стрілках. ` +
+        (isZero
+          ? `Площа ≈ <strong>0</strong> — фігура вироджується в відрізок/точку.`
+          : `Його площа = |det| = <strong>${Math.abs(detRaw)}</strong>.`);
 
       const mean = document.getElementById('meaning');
-      if (det === 0) {
+      if (isZero) {
         mean.innerHTML =
-          'Площа 0: обидві стрілки на одній прямій. ' +
-          `Дивись: стовп.2 = (${B}, ${D}) — це те саме, що стовп.1 = (${A}, ${C}), лише розтягнутий. ` +
-          'Тому det = 0, матриця вироджена.';
-      } else if (det > 0) {
-        mean.textContent = 'Знак «+»: орієнтація звичайна (не перевернута).';
+          'det ≈ 0: стовпці лінійно залежні, матриця вироджена, оберненої немає. ' +
+          colDependenceNote(A, B, C, D);
+      } else if (detRaw > 0) {
+        mean.textContent = 'Знак «+»: орієнтована площа додатна (базис не перевернутий). Звичайна площа = |det|.';
       } else {
-        mean.textContent = 'Знак «−»: орієнтація перевернута (площа та сама за модулем).';
+        mean.textContent = 'Знак «−»: орієнтована площа від’ємна (базис перевернутий). Звичайна площа = |det|.';
       }
       draw(A, B, C, D);
     }
