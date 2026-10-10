@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Мінори та алгебраїчні доповнення</title>
+  <link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,600&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f3f6f9; --ink: #152033; --muted: #5c6b7e; --panel: #fff;
+      --line: #d5dee8; --accent: #2f6fdb; --cut: #c45c26; --hi: #fff6df;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 40px 14px 48px;
+      background: linear-gradient(180deg, #e8eef6 0%, var(--bg) 180px);
+      color: var(--ink); font-family: 'Source Sans 3', system-ui, sans-serif;
+      font-size: 15.5px; line-height: 1.5;
+    }
+    .app { max-width: 920px; margin: 0 auto; }
+    h1 { font-family: 'Literata', Georgia, serif; font-size: 1.7rem; margin: 0 0 8px; font-weight: 600; }
+    .lead { color: var(--muted); margin: 0 0 14px; max-width: 62ch; }
+    details.theory {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 14px;
+    }
+    details.theory summary {
+      cursor: pointer; padding: 11px 14px; font-weight: 600; list-style: none; background: #f7f9fc;
+    }
+    details.theory summary::-webkit-details-marker { display: none; }
+    details.theory summary::before { content: '▸ '; color: var(--accent); }
+    details.theory[open] summary::before { content: '▾ '; }
+    .theory-body { padding: 2px 14px 14px; }
+    .panel {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+      padding: 16px; margin-bottom: 12px;
+    }
+    .panel h2 { margin: 0 0 12px; font-size: 1.05rem; font-family: 'Literata', Georgia, serif; }
+    .row { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+    .mat {
+      display: grid; grid-template-columns: repeat(3, 52px); gap: 5px;
+      padding: 10px 12px; border-left: 2.5px solid var(--ink); border-right: 2.5px solid var(--ink);
+      border-radius: 3px; background: #fafbfc;
+    }
+    .cell {
+      width: 52px; height: 44px; display: flex; align-items: center; justify-content: center;
+      border-radius: 5px; cursor: pointer; border: 1px solid var(--line); background: #fff;
+      font-variant-numeric: tabular-nums; font-weight: 500; user-select: none;
+    }
+    .cell:hover { border-color: #9bb6d9; }
+    .cell.sel { outline: 2px solid var(--accent); background: rgba(47,111,219,0.12); font-weight: 700; }
+    .cell.cut { background: rgba(196,92,38,0.15); color: var(--cut); text-decoration: line-through; opacity: 0.7; }
+    .cell.keep { background: rgba(47,111,219,0.12); }
+    .info {
+      flex: 1; min-width: 220px; padding: 12px; background: var(--hi); border-radius: 10px;
+      font-size: 1.02rem;
+    }
+    .chess-block {
+      display: flex; flex-wrap: wrap; gap: 16px; align-items: center;
+      margin: 10px 0 4px; padding: 12px; background: #f7f9fc; border-radius: 10px;
+    }
+    .chess {
+      display: grid; grid-template-columns: repeat(3, 36px); gap: 4px;
+    }
+    .chess span {
+      width: 36px; height: 32px; display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; font-weight: 700; border-radius: 5px; border: 1px solid transparent;
+    }
+    .chess .p { background: #e7f0fb; color: var(--accent); }
+    .chess .m { background: #fde8df; color: var(--cut); }
+    .chess span.flash {
+      outline: 2px solid var(--ink); border-color: var(--ink);
+      transform: scale(1.06);
+    }
+    .chess-note { margin: 0; max-width: 36ch; font-size: 0.95rem; color: var(--muted); }
+    .theory-body p { margin: 8px 0; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>Мінори та алгебраїчні доповнення</h1>
+    <p class="lead">
+      Мінор — визначник після викреслення рядка й стовпця. Алгебраїчне доповнення додає знак «шахівниці».
+    </p>
+
+    <details class="theory" open>
+      <summary>Теоретична довідка</summary>
+      <div class="theory-body">
+        <p>
+          <strong>Мінор</strong> M<sub>ij</sub> елемента a<sub>ij</sub> — це визначник 2×2,
+          що лишається, коли викреслити рядок i і стовпець j.
+        </p>
+        <p>
+          <strong>Алгебраїчне доповнення:</strong>
+          A<sub>ij</sub> = (±) · M<sub>ij</sub>, де знак залежить від позиції комірки.
+        </p>
+        <p>
+          Правило знака просте: комірка (1,1) завжди «+», далі знаки чергуються як на шахівниці —
+          сусідня по горизонталі чи вертикалі має протилежний знак.
+        </p>
+        <div class="chess-block">
+          <div class="chess" id="chessTheory" aria-label="Шахівниця знаків">
+            <span class="p">+</span><span class="m">−</span><span class="p">+</span>
+            <span class="m">−</span><span class="p">+</span><span class="m">−</span>
+            <span class="p">+</span><span class="m">−</span><span class="p">+</span>
+          </div>
+          <p class="chess-note">
+            Ліворуч угорі +, далі − + у першому рядку;<br>
+            другий рядок починається з −; третій — знову з +.
+          </p>
+        </div>
+        <p style="margin-top:10px;color:var(--muted);font-size:0.92rem">
+          Формально: знак = (−1)<sup>i+j</sup>. Якщо i+j парне → +, якщо непарне → −.
+        </p>
+      </div>
+    </details>
+
+    <section class="panel">
+      <h2>Клікни елемент 3×3</h2>
+      <div class="row">
+        <div id="mat" class="mat"></div>
+        <div class="info" id="info">Обери комірку — побачиш, що викреслюється.</div>
+      </div>
+      <div class="chess-block" style="margin-top:14px">
+        <div class="chess" id="chessLive" aria-label="Шахівниця знаків">
+          <span class="p">+</span><span class="m">−</span><span class="p">+</span>
+          <span class="m">−</span><span class="p">+</span><span class="m">−</span>
+          <span class="p">+</span><span class="m">−</span><span class="p">+</span>
+        </div>
+        <p class="chess-note" id="chessHint">Підсвічується знак саме для обраної комірки.</p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const M = [[2, 1, 3], [0, 4, -1], [5, 2, 1]];
+
+    function minor(i, j) {
+      const sub = [];
+      for (let r = 0; r < 3; r++) {
+        if (r === i) continue;
+        const row = [];
+        for (let c = 0; c < 3; c++) if (c !== j) row.push(M[r][c]);
+        sub.push(row);
+      }
+      return sub[0][0] * sub[1][1] - sub[0][1] * sub[1][0];
+    }
+
+    function render(selI, selJ) {
+      const mat = document.getElementById('mat');
+      mat.innerHTML = '';
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          const d = document.createElement('div');
+          d.className = 'cell';
+          d.textContent = M[i][j];
+          if (selI != null) {
+            if (i === selI && j === selJ) d.classList.add('sel');
+            else if (i === selI || j === selJ) d.classList.add('cut');
+            else d.classList.add('keep');
+          }
+          d.onclick = () => render(i, j);
+          mat.appendChild(d);
+        }
+      }
+      if (selI == null) return;
+      const m = minor(selI, selJ);
+      const sign = ((selI + selJ) % 2 === 0) ? 1 : -1;
+      const Aij = sign * m;
+      const ii = selI + 1, jj = selJ + 1;
+      const signStr = sign > 0 ? '+' : '−';
+      const parity = (selI + selJ) % 2 === 0 ? 'парне' : 'непарне';
+
+      document.getElementById('info').innerHTML =
+        `Елемент a<sub>${ii}${jj}</sub> = <strong>${M[selI][selJ]}</strong>.<br>` +
+        `Викреслюємо рядок ${ii} і стовпець ${jj}.<br>` +
+        `Мінор M<sub>${ii}${jj}</sub> = <strong>${m}</strong>.<br>` +
+        `Знак: i+j = ${ii}+${jj} = ${ii + jj} (${parity}) → <strong>${signStr}</strong>.<br>` +
+        `A<sub>${ii}${jj}</sub> = (${signStr}1) · ${m} = <strong>${Aij}</strong>.`;
+
+      const cells = document.querySelectorAll('#chessLive span');
+      cells.forEach((el, idx) => {
+        el.classList.toggle('flash', idx === selI * 3 + selJ);
+      });
+      document.getElementById('chessHint').innerHTML =
+        `Для a<sub>${ii}${jj}</sub> на шахівниці стоїть <strong>${signStr}</strong>.`;
+    }
+
+    render(0, 0);
+  </script>
+</body>
+</html>

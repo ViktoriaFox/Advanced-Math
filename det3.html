@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Визначник 3-го порядку</title>
+  <link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,600&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f3f6f9; --ink: #152033; --muted: #5c6b7e; --panel: #fff;
+      --line: #d5dee8; --accent: #2f6fdb; --cut: #c45c26; --ok: #1a7a5c;
+      --hi: #fff6df; --soft: #f0f4f8; --plus: #1a7a5c; --minus: #c45c26;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 40px 14px 48px;
+      background: linear-gradient(180deg, #e8eef6 0%, var(--bg) 180px);
+      color: var(--ink); font-family: 'Source Sans 3', system-ui, sans-serif;
+      font-size: 15.5px; line-height: 1.5;
+    }
+    .app { max-width: 960px; margin: 0 auto; }
+    h1 {
+      font-family: 'Literata', Georgia, serif;
+      font-size: clamp(1.4rem, 2.8vw, 1.75rem);
+      margin: 0 0 6px; font-weight: 600;
+    }
+    .lead { color: var(--muted); margin: 0 0 14px; max-width: 64ch; }
+    details.theory {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 14px;
+    }
+    details.theory summary {
+      cursor: pointer; padding: 11px 14px; font-weight: 600; list-style: none; background: #f7f9fc;
+    }
+    details.theory summary::-webkit-details-marker { display: none; }
+    details.theory summary::before { content: '▸ '; color: var(--accent); }
+    details.theory[open] summary::before { content: '▾ '; }
+    .theory-body { padding: 4px 14px 14px; }
+    .theory-body p { margin: 8px 0; }
+    .formula-static {
+      background: var(--soft); border-radius: 8px; padding: 10px 12px;
+      font-size: 0.98rem; margin: 8px 0; line-height: 1.55;
+    }
+    .panel {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+      padding: 16px; margin-bottom: 14px;
+    }
+    .panel h2 {
+      margin: 0 0 4px; font-size: 1.05rem; font-family: 'Literata', Georgia, serif;
+    }
+    .hint { margin: 0 0 12px; color: var(--muted); font-size: 0.92rem; }
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1.15fr;
+      gap: 18px;
+      align-items: start;
+    }
+    @media (max-width: 720px) { .layout { grid-template-columns: 1fr; } }
+    .mat3 {
+      display: inline-grid; grid-template-columns: repeat(3, 56px); gap: 5px;
+      padding: 10px 12px; border-left: 2.5px solid var(--ink); border-right: 2.5px solid var(--ink);
+      border-radius: 3px; background: #fafbfc;
+    }
+    .mat3 input {
+      width: 56px; height: 42px; text-align: center; font: inherit; font-size: 1.05rem;
+      border: 1px solid var(--line); border-radius: 6px; background: #fff;
+    }
+    .mat3 input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+    .mat3 input.hi {
+      background: rgba(47,111,219,0.18); font-weight: 700;
+      outline: 2px solid var(--accent); border-color: transparent;
+    }
+    .mat3 input.cut {
+      opacity: 0.4; text-decoration: line-through; color: var(--cut);
+      background: rgba(196,92,38,0.08);
+    }
+    .mat3 input.keep { background: rgba(26,122,92,0.1); font-weight: 600; }
+    .mat2 {
+      display: inline-grid; grid-template-columns: repeat(2, 48px); gap: 4px;
+      padding: 8px 10px; border-left: 2px solid var(--ink); border-right: 2px solid var(--ink);
+      border-radius: 2px; background: #fff; vertical-align: middle;
+    }
+    .mat2 span {
+      width: 48px; height: 36px; display: flex; align-items: center; justify-content: center;
+      font-variant-numeric: tabular-nums; font-weight: 600;
+      background: rgba(26,122,92,0.1); border-radius: 4px;
+    }
+    .term-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 8px; }
+    .term-tabs button {
+      font: inherit; padding: 7px 11px; border-radius: 8px; border: 1px solid var(--line);
+      background: #fff; cursor: pointer;
+    }
+    .term-tabs button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .term-tabs button.plus-tab.on { background: var(--plus); border-color: var(--plus); }
+    .term-tabs button.minus-tab.on { background: var(--minus); border-color: var(--minus); }
+    .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .controls button {
+      font: inherit; padding: 6px 12px; border-radius: 7px; border: 1px solid var(--line);
+      background: #fff; cursor: pointer;
+    }
+    .controls button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .steps {
+      background: var(--hi); border-radius: 12px; padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .steps .title { font-weight: 700; font-size: 1.02rem; margin: 0; }
+    .step-line {
+      margin: 0; padding: 8px 10px; background: rgba(255,255,255,0.7);
+      border-radius: 8px; border-left: 3px solid var(--accent);
+    }
+    .step-line.plus-border { border-left-color: var(--plus); }
+    .step-line.minus-border { border-left-color: var(--minus); }
+    .step-line .muted { color: var(--muted); font-weight: 400; }
+    .sum-box {
+      margin-top: 4px; padding: 10px 12px; background: #fff; border-radius: 8px;
+      border: 1px solid var(--line); font-size: 1.02rem;
+    }
+    .sum-box .final { color: var(--ok); font-weight: 700; font-size: 1.15rem; }
+    .tri-wrap {
+      position: relative; width: 240px; height: 240px; margin: 4px 0;
+    }
+    .tri-wrap svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    .tri-grid {
+      position: absolute; inset: 0;
+      display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+      gap: 8px; padding: 18px;
+    }
+    .tri-cell {
+      display: flex; align-items: center; justify-content: center;
+      background: #fff; border: 1px solid var(--line); border-radius: 8px;
+      font-weight: 600; font-variant-numeric: tabular-nums; font-size: 1.05rem;
+      z-index: 1; transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .tri-cell.on-plus {
+      background: rgba(26,122,92,0.18); border-color: var(--plus); color: var(--plus);
+    }
+    .tri-cell.on-minus {
+      background: rgba(196,92,38,0.18); border-color: var(--minus); color: var(--minus);
+    }
+    .legend {
+      display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.88rem; color: var(--muted); margin-top: 6px;
+    }
+    .legend span::before {
+      content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 2px;
+      margin-right: 5px; vertical-align: middle;
+    }
+    .legend .lp::before { background: var(--plus); }
+    .legend .lm::before { background: var(--minus); }
+    sub { font-size: 0.75em; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>Обчислення визначників 3-го порядку</h1>
+    <p class="lead">
+      Два способи: розклад за рядком (мінори) і метод трикутників — швидка схема саме для 3×3.
+      Матриця спільна для обох блоків.
+    </p>
+
+    <details class="theory">
+      <summary>Теоретична довідка</summary>
+      <div class="theory-body">
+        <p><strong>Розклад:</strong></p>
+        <div class="formula-static">
+          det&nbsp;A = a<sub>11</sub>A<sub>11</sub> + a<sub>12</sub>A<sub>12</sub> + a<sub>13</sub>A<sub>13</sub>
+        </div>
+        <p><strong>Метод трикутників:</strong> зі знаком «+» — головна діагональ і два трикутники, паралельні їй;
+          зі знаком «−» — побічна діагональ і два трикутники, паралельні їй.</p>
+        <div class="formula-static">
+          det = a<sub>11</sub>a<sub>22</sub>a<sub>33</sub> + a<sub>12</sub>a<sub>23</sub>a<sub>31</sub> + a<sub>13</sub>a<sub>21</sub>a<sub>32</sub>
+          − a<sub>13</sub>a<sub>22</sub>a<sub>31</sub> − a<sub>12</sub>a<sub>21</sub>a<sub>33</sub> − a<sub>11</sub>a<sub>23</sub>a<sub>32</sub>
+        </div>
+      </div>
+    </details>
+
+    <!-- ===== Expansion ===== -->
+    <section class="panel">
+      <h2>1. Розклад за рядком 1</h2>
+      <p class="hint">Обери доданок або гортай кнопкою. Числа можна змінювати.</p>
+
+      <div class="term-tabs" id="tabs">
+        <button type="button" data-j="0">1. a<sub>11</sub></button>
+        <button type="button" data-j="1">2. a<sub>12</sub></button>
+        <button type="button" data-j="2">3. a<sub>13</sub></button>
+        <button type="button" data-j="3">Підсумок</button>
+      </div>
+
+      <div class="layout">
+        <div>
+          <div class="mat3" id="mat"></div>
+          <div class="controls">
+            <button type="button" class="primary" id="next">Далі →</button>
+            <button type="button" id="reset">Спочатку</button>
+            <button type="button" id="sample">Інший приклад</button>
+          </div>
+        </div>
+        <div class="steps" id="steps"></div>
+      </div>
+    </section>
+
+    <!-- ===== Triangles ===== -->
+    <section class="panel">
+      <h2>2. Метод трикутників</h2>
+      <p class="hint">Шість добутків: три «зелені» (+), три «теракотові» (−). Клікай вкладки — побачиш лінії на схемі.</p>
+
+      <div class="term-tabs" id="triTabs">
+        <button type="button" class="plus-tab" data-t="0">+ діагональ</button>
+        <button type="button" class="plus-tab" data-t="1">+ трикутник</button>
+        <button type="button" class="plus-tab" data-t="2">+ трикутник</button>
+        <button type="button" class="minus-tab" data-t="3">− побічна</button>
+        <button type="button" class="minus-tab" data-t="4">− трикутник</button>
+        <button type="button" class="minus-tab" data-t="5">− трикутник</button>
+        <button type="button" data-t="6">Підсумок</button>
+      </div>
+
+      <div class="layout">
+        <div>
+          <div class="tri-wrap" id="triWrap">
+            <svg id="triSvg" viewBox="0 0 240 240" aria-hidden="true"></svg>
+            <div class="tri-grid" id="triGrid"></div>
+          </div>
+          <div class="legend">
+            <span class="lp">зі знаком +</span>
+            <span class="lm">зі знаком −</span>
+          </div>
+          <div class="controls">
+            <button type="button" class="primary" id="triNext">Далі →</button>
+            <button type="button" id="triReset">Спочатку</button>
+          </div>
+        </div>
+        <div class="steps" id="triSteps"></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    let M = [[2, 1, 3], [0, 4, -1], [5, 2, 1]];
+    let step = 0;
+    let triStep = 0;
+
+    // Triangle / Sarrus products: list of [r,c] triples + sign
+    const TRI = [
+      { sign: 1,  cells: [[0,0],[1,1],[2,2]], label: 'головна діагональ', name: 'a₁₁ · a₂₂ · a₃₃' },
+      { sign: 1,  cells: [[0,1],[1,2],[2,0]], label: 'трикутник ∥ головній', name: 'a₁₂ · a₂₃ · a₃₁' },
+      { sign: 1,  cells: [[0,2],[1,0],[2,1]], label: 'трикутник ∥ головній', name: 'a₁₃ · a₂₁ · a₃₂' },
+      { sign: -1, cells: [[0,2],[1,1],[2,0]], label: 'побічна діагональ', name: 'a₁₃ · a₂₂ · a₃₁' },
+      { sign: -1, cells: [[0,1],[1,0],[2,2]], label: 'трикутник ∥ побічній', name: 'a₁₂ · a₂₁ · a₃₃' },
+      { sign: -1, cells: [[0,0],[1,2],[2,1]], label: 'трикутник ∥ побічній', name: 'a₁₁ · a₂₃ · a₃₂' }
+    ];
+
+    function productOf(cells) {
+      return cells.reduce((p, [r, c]) => p * M[r][c], 1);
+    }
+
+    function triContrib(t) {
+      return TRI[t].sign * productOf(TRI[t].cells);
+    }
+
+    function detTriangles() {
+      return TRI.reduce((s, _, i) => s + triContrib(i), 0);
+    }
+
+    function subMatrix(j) {
+      const sub = [];
+      for (let r = 1; r < 3; r++) {
+        const row = [];
+        for (let c = 0; c < 3; c++) if (c !== j) row.push(M[r][c]);
+        sub.push(row);
+      }
+      return sub;
+    }
+
+    function minorVal(j) {
+      const s = subMatrix(j);
+      return s[0][0] * s[1][1] - s[0][1] * s[1][0];
+    }
+    function signOf(j) { return (j % 2 === 0) ? 1 : -1; }
+    function cofactor(j) { return signOf(j) * minorVal(j); }
+    function term(j) { return M[0][j] * cofactor(j); }
+    function det3() { return term(0) + term(1) + term(2); }
+
+    function mat2HTML(s) {
+      return `<span class="mat2"><span>${s[0][0]}</span><span>${s[0][1]}</span><span>${s[1][0]}</span><span>${s[1][1]}</span></span>`;
+    }
+
+    function cellCenter(r, c) {
+      // match .tri-grid: padding 18, gap 8, 3 equal cells in 240px
+      const pad = 18, gap = 8, size = 240;
+      const cell = (size - 2 * pad - 2 * gap) / 3;
+      return {
+        x: pad + c * (cell + gap) + cell / 2,
+        y: pad + r * (cell + gap) + cell / 2
+      };
+    }
+
+    // —— Expansion UI ——
+    function renderMat() {
+      const mat = document.getElementById('mat');
+      mat.innerHTML = '';
+      const focusJ = step <= 2 ? step : -1;
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          const inp = document.createElement('input');
+          inp.type = 'number';
+          inp.value = M[i][j];
+          if (focusJ >= 0) {
+            if (i === 0 && j === focusJ) inp.classList.add('hi');
+            else if (i === 0 || j === focusJ) inp.classList.add('cut');
+            else inp.classList.add('keep');
+          }
+          inp.addEventListener('input', () => {
+            M[i][j] = +inp.value || 0;
+            renderAll();
+          });
+          mat.appendChild(inp);
+        }
+      }
+    }
+
+    function renderTabs() {
+      document.querySelectorAll('#tabs button').forEach(btn => {
+        btn.classList.toggle('on', +btn.dataset.j === step);
+      });
+    }
+
+    function renderSteps() {
+      const box = document.getElementById('steps');
+      if (step === 3) {
+        const t0 = term(0), t1 = term(1), t2 = term(2);
+        box.innerHTML = `
+          <p class="title">Усі три доданки</p>
+          <p class="step-line">a<sub>11</sub>A<sub>11</sub> = ${M[0][0]} · (${cofactor(0)}) = <strong>${t0}</strong></p>
+          <p class="step-line">a<sub>12</sub>A<sub>12</sub> = ${M[0][1]} · (${cofactor(1)}) = <strong>${t1}</strong></p>
+          <p class="step-line">a<sub>13</sub>A<sub>13</sub> = ${M[0][2]} · (${cofactor(2)}) = <strong>${t2}</strong></p>
+          <div class="sum-box">det = ${t0} + (${t1}) + (${t2}) = <span class="final">${det3()}</span></div>`;
+        return;
+      }
+      const j = step;
+      const a = M[0][j];
+      const s = subMatrix(j);
+      const m = minorVal(j);
+      const sgn = signOf(j);
+      const A = cofactor(j);
+      const contrib = term(j);
+      const idx = `1${j + 1}`;
+      const signLabel = sgn > 0 ? '+1' : '−1';
+      box.innerHTML = `
+        <p class="title">Доданок ${j + 1} з 3 · a<sub>${idx}</sub> = ${a}</p>
+        <p class="step-line"><strong>1.</strong> Викреслюємо рядок 1 і стовпець ${j + 1}. Мінор ${mat2HTML(s)}</p>
+        <p class="step-line"><strong>2.</strong> M<sub>${idx}</sub> = ${s[0][0]}·${s[1][1]} − (${s[0][1]})·(${s[1][0]}) = <strong>${m}</strong></p>
+        <p class="step-line"><strong>3.</strong> Знак (−1)<sup>1+${j + 1}</sup> = <strong>${signLabel}</strong></p>
+        <p class="step-line"><strong>4.</strong> A<sub>${idx}</sub> = ${signLabel} · (${m}) = <strong>${A}</strong></p>
+        <p class="step-line"><strong>5.</strong> Внесок: ${a} · (${A}) = <strong>${contrib}</strong></p>
+        <div class="sum-box">Поки що: ${[0,1,2].filter(k => k <= j).map(k => term(k)).join(' + ')}${j === 2 ? ` = <span class="final">${det3()}</span>` : ' …'}</div>`;
+    }
+
+    // —— Triangle UI ——
+    function renderTriGrid() {
+      const grid = document.getElementById('triGrid');
+      grid.innerHTML = '';
+      const active = triStep < 6 ? TRI[triStep] : null;
+      const set = active ? new Set(active.cells.map(([r, c]) => `${r},${c}`)) : null;
+      const cls = active ? (active.sign > 0 ? 'on-plus' : 'on-minus') : '';
+
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          const d = document.createElement('div');
+          d.className = 'tri-cell' + (set && set.has(`${r},${c}`) ? ' ' + cls : '');
+          d.textContent = M[r][c];
+          grid.appendChild(d);
+        }
+      }
+
+      const svg = document.getElementById('triSvg');
+      svg.innerHTML = '';
+      if (!active) return;
+
+      const pts = active.cells.map(([r, c]) => cellCenter(r, c));
+      const color = active.sign > 0 ? '#1a7a5c' : '#c45c26';
+      // draw closed path through 3 points
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', `M ${pts[0].x} ${pts[0].y} L ${pts[1].x} ${pts[1].y} L ${pts[2].x} ${pts[2].y} Z`);
+      path.setAttribute('fill', active.sign > 0 ? 'rgba(26,122,92,0.08)' : 'rgba(196,92,38,0.08)');
+      path.setAttribute('stroke', color);
+      path.setAttribute('stroke-width', '3');
+      path.setAttribute('stroke-linejoin', 'round');
+      svg.appendChild(path);
+
+      pts.forEach(p => {
+        const cir = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        cir.setAttribute('cx', p.x);
+        cir.setAttribute('cy', p.y);
+        cir.setAttribute('r', '5');
+        cir.setAttribute('fill', color);
+        svg.appendChild(cir);
+      });
+    }
+
+    function renderTriTabs() {
+      document.querySelectorAll('#triTabs button').forEach(btn => {
+        btn.classList.toggle('on', +btn.dataset.t === triStep);
+      });
+    }
+
+    function renderTriSteps() {
+      const box = document.getElementById('triSteps');
+      if (triStep === 6) {
+        const parts = TRI.map((t, i) => {
+          const p = productOf(t.cells);
+          const c = triContrib(i);
+          return `<p class="step-line ${t.sign > 0 ? 'plus-border' : 'minus-border'}">${t.sign > 0 ? '+' : '−'} ${Math.abs(p)} <span class="muted">(${t.name})</span> → <strong>${c}</strong></p>`;
+        }).join('');
+        box.innerHTML = `
+          <p class="title">Усі шість добутків</p>
+          ${parts}
+          <div class="sum-box">
+            det = сума = <span class="final">${detTriangles()}</span>
+            <span class="muted"> (перевірка розкладом: ${det3()})</span>
+          </div>`;
+        return;
+      }
+
+      const t = TRI[triStep];
+      const vals = t.cells.map(([r, c]) => M[r][c]);
+      const prod = productOf(t.cells);
+      const contrib = triContrib(triStep);
+      const signWord = t.sign > 0 ? 'додаємо' : 'віднімаємо';
+      const border = t.sign > 0 ? 'plus-border' : 'minus-border';
+
+      box.innerHTML = `
+        <p class="title">${t.sign > 0 ? 'Плюс' : 'Мінус'} · ${t.label}</p>
+        <p class="step-line ${border}">
+          Добуток: ${vals.join(' · ')} = <strong>${prod}</strong>
+        </p>
+        <p class="step-line ${border}">
+          ${t.name} → ${signWord}: <strong>${t.sign > 0 ? '+' : '−'}${Math.abs(prod)}</strong>
+          = внесок <strong>${contrib}</strong>
+        </p>
+        <div class="sum-box">
+          Накопичено:
+          ${TRI.slice(0, triStep + 1).map((_, i) => triContrib(i)).join(' + ')}
+          ${triStep === 5 ? ` = <span class="final">${detTriangles()}</span>` : ' …'}
+        </div>`;
+    }
+
+    function renderAll() {
+      renderMat();
+      renderTabs();
+      renderSteps();
+      renderTriGrid();
+      renderTriTabs();
+      renderTriSteps();
+    }
+
+    document.querySelectorAll('#tabs button').forEach(btn => {
+      btn.addEventListener('click', () => { step = +btn.dataset.j; renderAll(); });
+    });
+    document.getElementById('next').onclick = () => { step = (step + 1) % 4; renderAll(); };
+    document.getElementById('reset').onclick = () => { step = 0; renderAll(); };
+    document.getElementById('sample').onclick = () => {
+      M = [[1, 2, 3], [0, 1, 4], [5, 6, 0]];
+      step = 0;
+      triStep = 0;
+      renderAll();
+    };
+
+    document.querySelectorAll('#triTabs button').forEach(btn => {
+      btn.addEventListener('click', () => { triStep = +btn.dataset.t; renderAll(); });
+    });
+    document.getElementById('triNext').onclick = () => { triStep = (triStep + 1) % 7; renderAll(); };
+    document.getElementById('triReset').onclick = () => { triStep = 0; renderAll(); };
+
+    renderAll();
+  </script>
+</body>
+</html>

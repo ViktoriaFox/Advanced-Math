@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Властивості визначників</title>
+  <link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,600&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f3f6f9; --ink: #152033; --muted: #5c6b7e; --panel: #fff;
+      --line: #d5dee8; --accent: #2f6fdb; --hi: #fff6df; --ok: #e7f6ef;
+      --warn: #fdecee;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 40px 14px 48px;
+      background: linear-gradient(180deg, #e8eef6 0%, var(--bg) 180px);
+      color: var(--ink); font-family: 'Source Sans 3', system-ui, sans-serif;
+      font-size: 15.5px; line-height: 1.55;
+    }
+    .app { max-width: 900px; margin: 0 auto; }
+    h1 {
+      font-family: 'Literata', Georgia, serif;
+      font-size: clamp(1.4rem, 2.8vw, 1.75rem);
+      margin: 0 0 8px; font-weight: 600;
+    }
+    .lead { color: var(--muted); margin: 0 0 14px; max-width: 64ch; }
+    details.theory {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 14px;
+    }
+    details.theory summary {
+      cursor: pointer; padding: 11px 14px; font-weight: 600; list-style: none; background: #f7f9fc;
+    }
+    details.theory summary::-webkit-details-marker { display: none; }
+    details.theory summary::before { content: '▸ '; color: var(--accent); }
+    details.theory[open] summary::before { content: '▾ '; }
+    .theory-body { padding: 4px 14px 14px; }
+    .theory-body p { margin: 8px 0; }
+    .theory-body ol { margin: 8px 0; padding-left: 1.3em; }
+    .theory-body li { margin: 8px 0; }
+    .panel {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+      padding: 16px; margin-bottom: 12px;
+    }
+    .panel h2 {
+      margin: 0 0 6px; font-size: 1.05rem; font-family: 'Literata', Georgia, serif;
+    }
+    .hint { margin: 0 0 12px; color: var(--muted); font-size: 0.92rem; }
+    .props { display: grid; gap: 8px; }
+    .prop {
+      display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;
+      padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px;
+      background: #fafbfc; cursor: pointer; text-align: left; font: inherit; color: inherit;
+    }
+    .prop:hover { border-color: #9bb6d9; }
+    .prop.on { background: var(--ok); border-color: #8bc9a8; }
+    .prop .name { font-weight: 600; }
+    .prop .sub { display: block; font-weight: 400; font-size: 0.88rem; color: var(--muted); margin-top: 2px; }
+    .prop .det {
+      font-variant-numeric: tabular-nums; font-weight: 700; color: var(--accent);
+      min-width: 3.5ch; text-align: right; font-size: 1.1rem;
+    }
+    .stage {
+      margin-top: 14px; padding: 14px 16px; background: var(--hi); border-radius: 12px;
+    }
+    .stage .title { font-weight: 700; margin: 0 0 10px; font-size: 1.05rem; }
+    .mats {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px;
+    }
+    .mat-block { text-align: center; }
+    .mat-block .lbl {
+      font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--muted); margin-bottom: 4px; font-weight: 600;
+    }
+    .mat-inline {
+      display: inline-grid; grid-template-columns: repeat(2, 44px); gap: 4px;
+      padding: 8px 10px; border-left: 2.5px solid var(--ink); border-right: 2.5px solid var(--ink);
+      border-radius: 3px; background: #fff;
+    }
+    .mat-inline span {
+      text-align: center; font-variant-numeric: tabular-nums; padding: 6px 0;
+      font-size: 1.05rem; font-weight: 600; border-radius: 4px;
+    }
+    .mat-inline span.hi { background: rgba(47,111,219,0.18); color: var(--accent); }
+    .arrow { font-size: 1.4rem; color: var(--muted); font-weight: 600; }
+    .explain {
+      margin: 0; padding: 10px 12px; background: #fff; border-radius: 8px;
+      border: 1px solid var(--line); font-size: 1rem;
+    }
+    .explain .rule {
+      display: inline-block; margin-top: 8px; padding: 4px 8px; border-radius: 6px;
+      background: #eef3fa; font-size: 0.92rem; color: var(--ink);
+    }
+    .det-big { font-size: 1.2rem; font-weight: 700; color: var(--accent); }
+    .why {
+      margin-top: 14px; padding: 12px; background: #eef3fa; border-radius: 10px;
+      font-size: 0.95rem; color: var(--ink);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>Використання властивостей визначників</h1>
+    <p class="lead">
+      Рахувати великий визначник «в лоб» довго. Властивості — це дозволені дії з рядками,
+      після яких det або не змінюється, або змінюється передбачувано (знак, множник).
+      Нижче — одна й та сама матриця 2×2: клікай дію і дивись, що сталось.
+    </p>
+
+    <details class="theory" open>
+      <summary>Навіщо це і які правила</summary>
+      <div class="theory-body">
+        <p>
+          Уявімо, що визначник — відповідь на «яка орієнтована площа».
+          Деякі перетворення фігури площу не чіпають, деякі розтягують у λ разів,
+          деякі віддзеркалюють (знак міняється).
+        </p>
+        <ol>
+          <li><strong>Поміняти два рядки</strong> → det змінює знак (було +5, стане −5).</li>
+          <li><strong>Помножити рядок на число λ</strong> → det теж множиться на λ.</li>
+          <li><strong>До рядка додати інший × число</strong> → det <em>не змінюється</em>. Це головний інструмент спрощення.</li>
+          <li><strong>Рядки пропорційні або є нульовий рядок</strong> → det = 0 (площа схлопнулась).</li>
+        </ol>
+        <p style="color:var(--muted);font-size:0.92rem;margin-bottom:0">
+          На іспитах часто просять «обчислити, користуючись властивостями» — саме ці кроки.
+        </p>
+      </div>
+    </details>
+
+    <section class="panel">
+      <h2>Живий приклад 2×2</h2>
+      <p class="hint">Праворуч у списку — новий det після дії. Вихідна матриця завжди однакова: рядки (3, 1) і (1, 2), det = 5.</p>
+      <div class="props" id="props"></div>
+      <div class="stage" id="stage"></div>
+      <div class="why">
+        <strong>Як цим користуватись на практиці:</strong>
+        хочемо отримати нулі під діагоналлю (як у методі Гаусса) діями типу
+        «рядок ← рядок − коефіцієнт · інший рядок» — det не псується.
+        Коли матриця стає трикутною, det = добуток діагоналі.
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const base = [[3, 1], [1, 2]];
+
+    function det2(M) {
+      return M[0][0] * M[1][1] - M[0][1] * M[1][0];
+    }
+
+    function matHTML(M, hiRows) {
+      const hi = hiRows || new Set();
+      let html = '<span class="mat-inline">';
+      for (let i = 0; i < 2; i++) {
+        for (let j = 0; j < 2; j++) {
+          html += `<span class="${hi.has(i) ? 'hi' : ''}">${M[i][j]}</span>`;
+        }
+      }
+      return html + '</span>';
+    }
+
+    const actions = [
+      {
+        id: 'id',
+        name: 'Вихідна матриця',
+        sub: 'від неї порівнюємо всі дії',
+        apply: () => base.map(r => r.slice()),
+        hi: new Set(),
+        explain(M) {
+          return {
+            text: `Початковий визначник: <span class="det-big">${det2(M)}</span> = 3·2 − 1·1.`,
+            rule: 'Це наша точка відліку.'
+          };
+        }
+      },
+      {
+        id: 'swap',
+        name: 'Поміняти рядки місцями',
+        sub: 'властивість: знак det змінюється',
+        apply: () => [base[1].slice(), base[0].slice()],
+        hi: new Set([0, 1]),
+        explain(M) {
+          return {
+            text: `Було det = ${det2(base)}, стало <span class="det-big">${det2(M)}</span>. Площа та сама, орієнтація «перевернулась».`,
+            rule: 'Правило: swap двох рядків → det → −det.'
+          };
+        }
+      },
+      {
+        id: 'scale',
+        name: 'Помножити рядок 1 на 2',
+        sub: 'властивість: det множиться на те саме число',
+        apply: () => [[base[0][0] * 2, base[0][1] * 2], base[1].slice()],
+        hi: new Set([0]),
+        explain(M) {
+          return {
+            text: `Перший рядок став удвічі довший → det теж ×2: ${det2(base)} → <span class="det-big">${det2(M)}</span>.`,
+            rule: 'Правило: рядок × λ ⇒ det × λ.'
+          };
+        }
+      },
+      {
+        id: 'add',
+        name: 'Рядок 2 ← рядок 2 − рядок 1',
+        sub: 'властивість: det не змінюється',
+        apply: () => [
+          base[0].slice(),
+          [base[1][0] - base[0][0], base[1][1] - base[0][1]]
+        ],
+        hi: new Set([1]),
+        explain(M) {
+          return {
+            text: `Відняли перший рядок від другого. Числа змінились, а det лишився <span class="det-big">${det2(M)}</span> (як було ${det2(base)}).`,
+            rule: 'Правило: рядок ← рядок + λ·інший ⇒ det той самий. Це головний інструмент спрощення.'
+          };
+        }
+      },
+      {
+        id: 'zero',
+        name: 'Зробити рядки пропорційними',
+        sub: 'наслідок: det = 0',
+        apply: () => [base[0].slice(), [base[0][0] * 2, base[0][1] * 2]],
+        hi: new Set([0, 1]),
+        explain(M) {
+          return {
+            text: `Другий рядок = перший × 2 (порівняй 3→6 і 1→2). Стрілки на одній прямій → <span class="det-big">det = ${det2(M)}</span>.`,
+            rule: 'Правило: пропорційні (або нульовий) рядки ⇒ det = 0.'
+          };
+        }
+      }
+    ];
+
+    const box = document.getElementById('props');
+    const stage = document.getElementById('stage');
+
+    function show(action) {
+      box.querySelectorAll('.prop').forEach(b => b.classList.toggle('on', b.dataset.id === action.id));
+      const M = action.apply();
+      const { text, rule } = action.explain(M);
+      stage.innerHTML = `
+        <p class="title">${action.name}</p>
+        <div class="mats">
+          <div class="mat-block">
+            <div class="lbl">було</div>
+            ${matHTML(base)}
+          </div>
+          <span class="arrow">→</span>
+          <div class="mat-block">
+            <div class="lbl">стало</div>
+            ${matHTML(M, action.hi)}
+          </div>
+        </div>
+        <p class="explain">${text}<br><span class="rule">${rule}</span></p>`;
+    }
+
+    actions.forEach(action => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'prop';
+      btn.dataset.id = action.id;
+      const M = action.apply();
+      btn.innerHTML =
+        `<span class="name">${action.name}<span class="sub">${action.sub}</span></span>` +
+        `<span class="det">${det2(M)}</span>`;
+      btn.onclick = () => show(action);
+      box.appendChild(btn);
+    });
+
+    show(actions[0]);
+  </script>
+</body>
+</html>

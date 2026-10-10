@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Визначник 2-го порядку</title>
+  <link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,600&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f3f6f9; --ink: #152033; --muted: #5c6b7e; --panel: #fff;
+      --line: #d5dee8; --main: #2f6fdb; --anti: #c45c26; --hi: #fff6df;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 40px 14px 48px;
+      background: linear-gradient(180deg, #e8eef6 0%, var(--bg) 180px);
+      color: var(--ink); font-family: 'Source Sans 3', system-ui, sans-serif;
+      font-size: 15.5px; line-height: 1.5;
+    }
+    .app { max-width: 900px; margin: 0 auto; }
+    h1 {
+      font-family: 'Literata', Georgia, serif;
+      font-size: clamp(1.4rem, 2.8vw, 1.85rem);
+      margin: 0 0 8px; font-weight: 600;
+    }
+    .lead { color: var(--muted); margin: 0 0 14px; max-width: 60ch; }
+    details.theory, details.geo {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 14px;
+    }
+    details summary {
+      cursor: pointer; padding: 11px 14px; font-weight: 600; list-style: none; background: #f7f9fc;
+    }
+    details summary::-webkit-details-marker { display: none; }
+    details summary::before { content: '▸ '; color: var(--main); }
+    details[open] summary::before { content: '▾ '; }
+    .theory-body, .geo-body { padding: 4px 14px 14px; }
+    .formula-static {
+      background: #f0f4f8; border-radius: 8px; padding: 10px 12px; margin: 8px 0; font-size: 1.05rem;
+    }
+    .panel {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+      padding: 16px; margin-bottom: 12px;
+    }
+    .panel h2 {
+      margin: 0 0 10px; font-size: 1.05rem; font-family: 'Literata', Georgia, serif;
+    }
+    .btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .btns button {
+      font: inherit; padding: 6px 12px; border-radius: 7px; border: 1px solid var(--line);
+      background: #fff; cursor: pointer;
+    }
+    .btns button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .mat-wrap { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+    .mat {
+      display: inline-grid; grid-template-columns: 64px 64px; gap: 6px;
+      padding: 12px 14px; border-left: 2.5px solid var(--ink); border-right: 2.5px solid var(--ink);
+      border-radius: 3px; background: #fafbfc;
+    }
+    .mat input {
+      width: 64px; height: 48px; text-align: center; font: inherit; font-size: 1.1rem;
+      font-variant-numeric: tabular-nums; border: 1px solid var(--line); border-radius: 6px; background: #fff;
+    }
+    .mat input:focus { outline: 2px solid var(--main); border-color: transparent; }
+    .mat input.col1 { box-shadow: inset 0 0 0 2px rgba(47,111,219,0.4); }
+    .mat input.col2 { box-shadow: inset 0 0 0 2px rgba(196,92,38,0.4); }
+    .col-labels {
+      display: flex; gap: 6px; margin: 0 0 6px 14px; font-size: 0.78rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .col-labels span { width: 64px; text-align: center; }
+    .col-labels .c1 { color: var(--main); }
+    .col-labels .c2 { color: var(--anti); }
+    .formula {
+      flex: 1; min-width: 200px; padding: 12px; background: var(--hi); border-radius: 10px; font-size: 1.08rem;
+    }
+    .legend { font-size: 0.9rem; color: var(--muted); margin-top: 10px; }
+    .legend .m { color: var(--main); font-weight: 700; }
+    .legend .a { color: var(--anti); font-weight: 700; }
+    .why {
+      margin: 0 0 12px; padding: 10px 12px; background: #eef3fa; border-radius: 8px;
+      font-size: 0.95rem; color: var(--ink); max-width: 62ch;
+    }
+    .geo-layout {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start;
+    }
+    @media (max-width: 700px) { .geo-layout { grid-template-columns: 1fr; } }
+    .viz {
+      width: 100%; max-width: 280px; height: 220px; border: 1px solid var(--line); border-radius: 10px;
+      background:
+        linear-gradient(#e8edf3 1px, transparent 1px) 0 0 / 20px 20px,
+        linear-gradient(90deg, #e8edf3 1px, transparent 1px) 0 0 / 20px 20px, #fff;
+    }
+    .meaning { margin: 8px 0 0; color: var(--muted); font-size: 0.95rem; }
+    .map {
+      margin: 0; padding: 10px 12px; background: #fff; border: 1px solid var(--line);
+      border-radius: 8px; font-size: 0.95rem;
+    }
+    .map strong.v1 { color: var(--main); }
+    .map strong.v2 { color: var(--anti); }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>Визначники 2-го порядку</h1>
+    <p class="lead">
+      Головне зараз — формула. Графік нижче необов’язковий: він лише показує,
+      <em>що означає</em> це число геометрично.
+    </p>
+
+    <details class="theory" open>
+      <summary>Теоретична довідка</summary>
+      <div class="theory-body">
+        <div class="formula-static">
+          det = a·d − b·c
+        </div>
+        <p>
+          Беремо добуток головної діагоналі (a і d) і віднімаємо добуток побічної (b і c).
+        </p>
+        <p>
+          <strong>Що означає det = 0?</strong>
+          Другий стовпець — це просто перший, помножений на якесь число
+          (наприклад, обидва (2, 1) і (4, 2) — бо 4=2·2 і 2=1·2).
+          Тоді на графіку стрілки лежать на одній прямій, площа = 0.
+        </p>
+        <p>
+          Таку матрицю називають <em>виродженою</em>: рівняння на кшталт «знайди обернену матрицю»
+          розв’язку не має. Для курсу достатньо запам’ятати:
+          <strong>det = 0 → щось «зламалось», стовпці не незалежні.</strong>
+        </p>
+        <p style="color:var(--muted);font-size:0.92rem;margin-bottom:0">
+          Кнопка «Вироджена» нижче як раз такий приклад — порівняй числа в стовпцях.
+        </p>
+      </div>
+    </details>
+
+    <section class="panel">
+      <h2>Порахуй за формулою</h2>
+      <div class="btns">
+        <button type="button" class="primary" id="ex1">Приклад 1</button>
+        <button type="button" id="ex2">Вироджена (det = 0)</button>
+        <button type="button" id="ex3">Від’ємний det</button>
+      </div>
+      <div class="col-labels"><span class="c1">стовп. 1</span><span class="c2">стовп. 2</span></div>
+      <div class="mat-wrap">
+        <div class="mat" id="mat">
+          <input class="col1" id="a" type="number" value="3" title="a">
+          <input class="col2" id="b" type="number" value="1" title="b">
+          <input class="col1" id="c" type="number" value="1" title="c">
+          <input class="col2" id="d" type="number" value="2" title="d">
+        </div>
+        <div class="formula" id="formula"></div>
+      </div>
+      <p class="legend">
+        <span class="m">головна a·d</span> − <span class="a">побічна b·c</span>
+      </p>
+    </section>
+
+    <details class="geo">
+      <summary>Навіщо тут графік? (геометричний зміст, можна пропустити)</summary>
+      <div class="geo-body">
+        <p class="why">
+          Визначник — не лише «формула з діагоналей». Число |det| дорівнює
+          <strong>площі паралелограма</strong>, який натягують два стовпці матриці,
+          якщо намалювати їх як стрілки на площині. Знак det каже, чи базис
+          «перевернутий». Тому на графіку з’являються два вектори — це просто стовпці.
+        </p>
+        <div class="geo-layout">
+          <div>
+            <p class="map" id="map"></p>
+            <p class="meaning" id="meaning"></p>
+          </div>
+          <canvas class="viz" id="viz" width="280" height="220" aria-label="Паралелограм зі стовпців"></canvas>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <script>
+    const a = document.getElementById('a');
+    const b = document.getElementById('b');
+    const c = document.getElementById('c');
+    const d = document.getElementById('d');
+    const canvas = document.getElementById('viz');
+    const ctx = canvas.getContext('2d');
+
+    function vals() {
+      return [+a.value || 0, +b.value || 0, +c.value || 0, +d.value || 0];
+    }
+
+    function update() {
+      const [A, B, C, D] = vals();
+      const det = A * D - B * C;
+
+      document.getElementById('formula').innerHTML =
+        `det = <span style="color:var(--main)">${A}·${D}</span> − <span style="color:var(--anti)">${B}·${C}</span> = <strong>${det}</strong>`;
+
+      document.getElementById('map').innerHTML =
+        `Стовпець 1 → вектор <strong class="v1">(${A}, ${C})</strong> на графіку.<br>` +
+        `Стовпець 2 → вектор <strong class="v2">(${B}, ${D})</strong>.<br>` +
+        `Затінена фігура — паралелограм на цих двох стрілках. Його площа = |det| = <strong>${Math.abs(det)}</strong>.`;
+
+      const mean = document.getElementById('meaning');
+      if (det === 0) {
+        mean.innerHTML =
+          'Площа 0: обидві стрілки на одній прямій. ' +
+          `Дивись: стовп.2 = (${B}, ${D}) — це те саме, що стовп.1 = (${A}, ${C}), лише розтягнутий. ` +
+          'Тому det = 0, матриця вироджена.';
+      } else if (det > 0) {
+        mean.textContent = 'Знак «+»: орієнтація звичайна (не перевернута).';
+      } else {
+        mean.textContent = 'Знак «−»: орієнтація перевернута (площа та сама за модулем).';
+      }
+      draw(A, B, C, D);
+    }
+
+    function draw(A, B, C, D) {
+      const w = canvas.width, h = canvas.height;
+      const pad = 28;
+      ctx.clearRect(0, 0, w, h);
+
+      // Corners of parallelogram in math coords (y up)
+      const pts = [
+        [0, 0],
+        [A, C],
+        [A + B, C + D],
+        [B, D]
+      ];
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      pts.forEach(([x, y]) => {
+        minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+        minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+      });
+      // Keep origin visible
+      minX = Math.min(minX, 0); maxX = Math.max(maxX, 0);
+      minY = Math.min(minY, 0); maxY = Math.max(maxY, 0);
+
+      let spanX = maxX - minX;
+      let spanY = maxY - minY;
+      if (spanX < 1e-9) spanX = 1;
+      if (spanY < 1e-9) spanY = 1;
+
+      const scale = Math.min((w - 2 * pad) / spanX, (h - 2 * pad) / spanY);
+
+      function toScreen(x, y) {
+        // center the bounding box in the canvas
+        const sx = pad + (x - minX) * scale;
+        const sy = h - pad - (y - minY) * scale; // flip Y
+        return [sx, sy];
+      }
+
+      const [ox, oy] = toScreen(0, 0);
+
+      // light grid in screen space
+      ctx.strokeStyle = '#e8edf3';
+      ctx.lineWidth = 1;
+      const step = scale; // 1 math unit
+      if (step >= 12) {
+        for (let x = Math.ceil(minX); x <= Math.floor(maxX); x++) {
+          const [gx] = toScreen(x, 0);
+          ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, h); ctx.stroke();
+        }
+        for (let y = Math.ceil(minY); y <= Math.floor(maxY); y++) {
+          const [, gy] = toScreen(0, y);
+          ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(w, gy); ctx.stroke();
+        }
+      }
+
+      // axes
+      ctx.strokeStyle = '#c5d0dc';
+      ctx.beginPath();
+      ctx.moveTo(0, oy); ctx.lineTo(w, oy);
+      ctx.moveTo(ox, 0); ctx.lineTo(ox, h);
+      ctx.stroke();
+
+      const [x1, y1] = toScreen(A, C);
+      const [x2, y2] = toScreen(B, D);
+      const [x3, y3] = toScreen(A + B, C + D);
+
+      ctx.beginPath();
+      ctx.moveTo(ox, oy);
+      ctx.lineTo(x1, y1);
+      ctx.lineTo(x3, y3);
+      ctx.lineTo(x2, y2);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(47,111,219,0.18)';
+      ctx.fill();
+      ctx.strokeStyle = '#2f6fdb';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      function arrow(tx, ty, color, label) {
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(ox, oy);
+        ctx.lineTo(tx, ty);
+        ctx.stroke();
+        // keep label inside canvas
+        const lx = Math.min(w - 52, Math.max(4, tx + 6));
+        const ly = Math.min(h - 6, Math.max(14, ty - 6));
+        ctx.font = '600 13px Source Sans 3, sans-serif';
+        ctx.fillText(label, lx, ly);
+      }
+      arrow(x1, y1, '#2f6fdb', 'стовп.1');
+      arrow(x2, y2, '#c45c26', 'стовп.2');
+    }
+
+    [a, b, c, d].forEach(el => el.addEventListener('input', update));
+    document.getElementById('ex1').onclick = () => { a.value=3; b.value=1; c.value=1; d.value=2; update(); };
+    document.getElementById('ex2').onclick = () => { a.value=2; b.value=4; c.value=1; d.value=2; update(); };
+    document.getElementById('ex3').onclick = () => { a.value=1; b.value=3; c.value=2; d.value=1; update(); };
+    update();
+  </script>
+</body>
+</html>

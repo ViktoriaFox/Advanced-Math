@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Добуток матриць</title>
+  <link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,600&family=JetBrains+Mono:wght@400;600&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f3f6f9; --ink: #152033; --muted: #5c6b7e; --panel: #fff;
+      --line: #d5dee8; --row: #2f6fdb; --col: #c45c26; --res: #1a7a5c;
+      --hi: #fff6df; --ok: #e7f6ef; --bad: #fdecee; --soft: #eef3fa;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 40px 14px 64px;
+      background: linear-gradient(180deg, #e8eef6 0%, var(--bg) 180px);
+      color: var(--ink); font-family: 'Source Sans 3', system-ui, sans-serif;
+      font-size: 15.5px; line-height: 1.55;
+    }
+    .app { max-width: 1040px; margin: 0 auto; }
+    h1 {
+      font-family: 'Literata', Georgia, serif;
+      font-size: clamp(1.45rem, 2.8vw, 1.9rem);
+      margin: 0 0 4px; font-weight: 600;
+    }
+    .motto {
+      display: inline-block; margin: 0 0 14px; padding: 8px 12px;
+      background: var(--hi); border-radius: 8px; font-weight: 600; font-size: 1.02rem;
+    }
+    .motto em { font-style: normal; color: var(--row); }
+    details.theory, details.extra {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 14px;
+    }
+    details summary {
+      cursor: pointer; padding: 11px 14px; font-weight: 600; list-style: none; background: #f7f9fc;
+    }
+    details summary::-webkit-details-marker { display: none; }
+    details summary::before { content: '▸ '; color: var(--row); }
+    details[open] summary::before { content: '▾ '; }
+    .theory-body, .extra-body { padding: 4px 14px 14px; }
+    .theory-body p, .extra-body p { margin: 8px 0; }
+    .theory-body ul, .extra-body ul { margin: 6px 0; padding-left: 1.2em; }
+    .warns { display: grid; gap: 8px; margin-top: 10px; }
+    .warn {
+      padding: 10px 12px; border-radius: 8px; background: var(--hi);
+      border-left: 3px solid var(--col); font-weight: 600;
+    }
+    .warn.soft { border-left-color: var(--row); background: var(--soft); }
+    .panel {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+      padding: 14px 16px; margin-bottom: 12px;
+    }
+    .panel h2 {
+      margin: 0 0 6px; font-size: 1.05rem; font-family: 'Literata', Georgia, serif;
+    }
+    .panel .sub { margin: 0 0 12px; color: var(--muted); font-size: 0.92rem; }
+    .workspace {
+      display: grid; grid-template-columns: 1fr auto 1fr auto 1fr;
+      gap: 10px; align-items: center; justify-items: center;
+      overflow-x: auto; padding-bottom: 4px;
+    }
+    @media (max-width: 720px) {
+      .workspace { grid-template-columns: 1fr; gap: 8px; }
+      .workspace .op { transform: rotate(90deg); }
+    }
+    .block-label {
+      font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--muted); text-align: center; margin-bottom: 6px; font-weight: 600;
+    }
+    .mat {
+      display: inline-grid; gap: 4px; padding: 10px 12px;
+      border-left: 2.5px solid var(--ink); border-right: 2.5px solid var(--ink);
+      border-radius: 3px; background: #fafbfc;
+    }
+    .cell {
+      width: 46px; height: 40px; display: flex; align-items: center; justify-content: center;
+      border-radius: 5px; font-variant-numeric: tabular-nums; font-weight: 500;
+      border: 1px solid transparent; transition: background 0.12s, outline 0.12s, opacity 0.12s;
+      user-select: none;
+    }
+    .cell.clickable { cursor: pointer; }
+    .cell.clickable:hover { border-color: #9bb6d9; }
+    .cell.row-hi { background: rgba(47,111,219,0.18); color: var(--row); font-weight: 700; }
+    .cell.col-hi { background: rgba(196,92,38,0.18); color: var(--col); font-weight: 700; }
+    .cell.res-hi { background: rgba(26,122,92,0.22); color: var(--res); font-weight: 700; outline: 2px solid var(--res); }
+    .cell.pair-hi { outline: 2px solid #e6a817; background: #fff3c4; font-weight: 700; }
+    .cell.dim { opacity: 0.35; }
+    .cell.wrong { background: var(--bad); }
+    .cell.right { background: var(--ok); }
+    .op { font-size: 1.6rem; color: var(--muted); font-weight: 600; }
+    .formula-bar {
+      margin-top: 12px; padding: 10px 12px; background: #f0f4f8;
+      border-radius: 8px; font-size: 1.05rem; min-height: 2.6em;
+    }
+    .anim-bar {
+      margin-top: 8px; padding: 10px 12px; background: var(--hi);
+      border-radius: 8px; font-size: 1.05rem; min-height: 2.4em;
+      font-variant-numeric: tabular-nums;
+    }
+    .anim-bar .done { color: var(--res); font-weight: 700; }
+    .anim-bar .cur { background: #ffe08a; padding: 0 3px; border-radius: 3px; font-weight: 700; }
+    .tag-row { color: var(--row); font-weight: 700; }
+    .tag-col { color: var(--col); font-weight: 700; }
+    .tag-res { color: var(--res); font-weight: 700; }
+    .size-row, .row-btns {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px;
+    }
+    .size-row label { color: var(--muted); font-size: 0.92rem; }
+    button, select {
+      font: inherit; padding: 6px 11px; border-radius: 7px; border: 1px solid var(--line);
+      background: #fff; cursor: pointer;
+    }
+    button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+    button:disabled { opacity: 0.45; cursor: default; }
+    .dims {
+      font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.95rem;
+      padding: 8px 10px; border-radius: 8px; display: inline-block;
+    }
+    .dims.ok { background: var(--ok); }
+    .dims.bad { background: var(--bad); }
+    .dims .inner { background: #ffe08a; padding: 0 3px; border-radius: 3px; font-weight: 700; }
+    .code {
+      font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.82rem;
+      background: #152033; color: #e8eef6; border-radius: 10px;
+      padding: 12px 14px; overflow-x: auto; line-height: 1.55; margin: 0;
+    }
+    .code .hi-line { background: rgba(61,139,253,0.28); border-radius: 3px; }
+    .code .c-i { color: #7eb6ff; }
+    .code .c-j { color: #ffb086; }
+    .code .c-k { color: #7ddea8; }
+    .k-progress { font-size: 0.92rem; color: var(--muted); min-height: 1.4em; }
+    .quiz-opts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .quiz-opts button { min-width: 100px; }
+    .quiz-opts button.correct { background: var(--ok); border-color: #8bc9a8; }
+    .quiz-opts button.wrong { background: var(--bad); border-color: #e8a0a8; }
+    .feedback { margin-top: 8px; min-height: 1.4em; font-weight: 500; }
+    .hint { color: var(--muted); font-size: 0.9rem; margin-top: 4px; }
+    .compare {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px;
+    }
+    @media (max-width: 700px) { .compare { grid-template-columns: 1fr; } }
+    .compare .box {
+      border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: #fafbfc;
+    }
+    .compare .box h3 { margin: 0 0 8px; font-size: 0.95rem; }
+    .compare .box.bad-box { background: #fff8f8; }
+    .compare .box.ok-box { background: #f4fbf7; }
+    .badge {
+      display: inline-block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.04em; padding: 2px 6px; border-radius: 4px; margin-left: 6px; vertical-align: middle;
+    }
+    .badge.must { background: #152033; color: #fff; }
+    .badge.extra { background: #d5dee8; color: #334; }
+    .rule-card {
+      border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px;
+      margin-bottom: 10px; background: #fafbfc;
+    }
+    .rule-card h3 { margin: 0 0 6px; font-size: 1rem; font-family: 'Literata', Georgia, serif; }
+    .formula {
+      background: var(--soft); border-radius: 8px; padding: 8px 10px; margin: 8px 0;
+      font-family: 'Literata', Georgia, serif; font-size: 1.05rem;
+    }
+    .q-block {
+      border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin: 10px 0; background: #fafbfc;
+    }
+    .q-block p { margin: 0 0 8px; }
+    .ans-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .size-pill {
+      display: inline-block; padding: 8px 14px; border-radius: 10px; background: var(--soft);
+      font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 1.05rem; margin: 4px 6px 4px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>Добуток матриць</h1>
+    <p class="motto">«<em>Рядок</em> іде в гості до <span class="tag-col">стовпця</span>»</p>
+
+    <details class="theory" open>
+      <summary>Теоретична довідка · головне</summary>
+      <div class="theory-body">
+        <p>
+          Елемент c<sub>ij</sub> добутку C = AB — скалярний добуток
+          <span class="tag-row">i-го рядка</span> A і <span class="tag-col">j-го стовпця</span> B:
+        </p>
+        <div class="formula">c<sub>ij</sub> = a<sub>i1</sub>b<sub>1j</sub> + a<sub>i2</sub>b<sub>2j</sub> + … </div>
+        <ul>
+          <li>Номер <strong>рядка</strong> результату → рядок з A.</li>
+          <li>Номер <strong>стовпця</strong> результату → стовпець з B.</li>
+          <li>«Всередині збігаються, зовні лишаються»: A<sub>m×n</sub>·B<sub>n×p</sub> = C<sub>m×p</sub>.</li>
+        </ul>
+        <div class="warns">
+          <div class="warn">Порядок має значення: AB ≠ BA (у загальному випадку).</div>
+          <div class="warn soft">Дужки змінювати можна: (AB)C = A(BC). Матриці місцями — ні.</div>
+        </div>
+      </div>
+    </details>
+
+    <!-- 1. Main interactive + animation -->
+    <section class="panel">
+      <h2>1. Клікни комірку результату</h2>
+      <p class="sub">Підсвітка рядка й стовпця + покрокова анімація пар множень.</p>
+      <div class="size-row">
+        <label>Приклад
+          <select id="example">
+            <option value="22">2×2 · класика</option>
+            <option value="23">2×3 × 3×2</option>
+          </select>
+        </label>
+        <button type="button" id="randBtn">Інші числа</button>
+        <button type="button" class="primary" id="animBtn">▶ Анімація пар</button>
+      </div>
+      <div class="workspace">
+        <div>
+          <div class="block-label">A</div>
+          <div id="matA"></div>
+        </div>
+        <div class="op">×</div>
+        <div>
+          <div class="block-label">B</div>
+          <div id="matB"></div>
+        </div>
+        <div class="op">=</div>
+        <div>
+          <div class="block-label">C = AB</div>
+          <div id="matC"></div>
+        </div>
+      </div>
+      <div class="formula-bar" id="formula">Обери комірку c<sub>ij</sub>.</div>
+      <div class="anim-bar" id="animBar">Анімація з’явиться тут.</div>
+    </section>
+
+    <!-- Must-know rules -->
+    <section class="panel">
+      <h2>Обов’язково запам’ятати <span class="badge must">must</span></h2>
+
+      <div class="rule-card">
+        <h3>① Множення не є поелементним</h3>
+        <p class="hint" style="margin:0 0 10px">
+          Типова помилка: помножити числа «на тих самих місцях». Клікни комірку результату —
+          побачиш обидва способи для <em>однієї</em> клітинки.
+        </p>
+        <div class="size-row" style="margin-bottom:12px">
+          <div>
+            <div class="block-label">A</div>
+            <div id="ewA" class="mat" style="grid-template-columns:repeat(2,46px)"></div>
+          </div>
+          <span class="op">×</span>
+          <div>
+            <div class="block-label">B</div>
+            <div id="ewB" class="mat" style="grid-template-columns:repeat(2,46px)"></div>
+          </div>
+          <span class="op">=</span>
+          <div>
+            <div class="block-label">результат (клікни)</div>
+            <div id="ewC" class="mat" style="grid-template-columns:repeat(2,46px)"></div>
+          </div>
+        </div>
+        <div class="compare">
+          <div class="box bad-box">
+            <h3>✗ Поелементно (помилка)</h3>
+            <p id="ewWrong" style="margin:0;font-size:1.02rem"></p>
+          </div>
+          <div class="box ok-box">
+            <h3>✓ Рядок × стовпець</h3>
+            <p id="ewRight" style="margin:0;font-size:1.02rem"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="rule-card">
+        <h3>② Порядок множення має значення</h3>
+        <p class="hint" style="margin:0 0 10px">
+          Множимо завжди <strong>ліву × праву</strong>. Внутрішні числа (жовті) мають збігтися — інакше добутку немає.
+          Кнопка міняє, хто лівий, а хто правий.
+        </p>
+        <div class="size-row">
+          <span class="size-pill" id="orderA">A<sub>2×3</sub></span>
+          <span class="size-pill" id="orderB">B<sub>3×4</sub></span>
+          <button type="button" class="primary" id="swapOrder">Поміняти місцями A і B</button>
+        </div>
+        <div class="compare" id="orderCompare">
+          <div class="box" id="orderAB"></div>
+          <div class="box" id="orderBA"></div>
+        </div>
+      </div>
+
+      <div class="rule-card">
+        <h3>③ Дужки змінювати можна, порядок — ні</h3>
+        <div class="formula">(AB)C = A(BC)</div>
+        <p class="hint" style="margin:0">Асоціативність: переставляти дужки можна, матриці — ні. Зручно, коли множиш три матриці підряд.</p>
+      </div>
+
+      <div class="rule-card">
+        <h3>④ Скільки множень на один елемент</h3>
+        <p class="hint" style="margin:0 0 10px">
+          Внутрішнє число n — це «довжина зустрічі» рядка зі стовпцем: стільки пар треба перемножити, щоб отримати <em>одну</em> клітинку.
+        </p>
+        <div class="size-row" style="margin-bottom:10px">
+          <label>Довжина спільного боку n =
+            <select id="nDemo">
+              <option value="2">2</option>
+              <option value="3" selected>3</option>
+              <option value="4">4</option>
+            </select>
+          </label>
+        </div>
+        <div id="nMulDemo"></div>
+      </div>
+    </section>
+
+    <!-- Extra -->
+    <details class="extra">
+      <summary>Корисно знати <span class="badge extra">далі</span></summary>
+      <div class="extra-body">
+        <h3 style="font-family:Literata,Georgia,serif;font-size:1.05rem;margin:8px 0">⑤ Одинична матриця</h3>
+        <div class="formula">AI = IA = A</div>
+        <p>
+          Одинична працює як число 1. Наприклад
+          I<sub>2</sub> =
+          <span class="mat" style="grid-template-columns:repeat(2,36px);display:inline-grid;vertical-align:middle;padding:6px 8px;gap:3px;margin:0 4px">
+            <span class="cell" style="width:36px;height:32px">1</span><span class="cell" style="width:36px;height:32px">0</span>
+            <span class="cell" style="width:36px;height:32px">0</span><span class="cell" style="width:36px;height:32px">1</span>
+          </span>
+          — одиниці на діагоналі, нулі поза нею. Розмір I має підходити до операції.
+        </p>
+
+        <h3 style="font-family:Literata,Georgia,serif;font-size:1.05rem;margin:16px 0 8px">⑥ Нульова матриця</h3>
+        <div class="formula">A·0 = 0</div>
+        <p>Якщо розміри сумісні, добуток із нульовою матрицею дає нульову.</p>
+
+        <h3 style="font-family:Literata,Georgia,serif;font-size:1.05rem;margin:16px 0 8px">⑦ Степінь матриці</h3>
+        <div class="formula">A² = A·A</div>
+        <p>
+          Це <strong>не</strong> піднесення кожного елемента до квадрата.
+          Цілий додатний степінь має сенс лише для <strong>квадратної</strong> матриці
+          (інакше A·A навіть не визначене за розмірами). Матриця 2×3 не має A² у звичайному сенсі.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <script>
+    let A, B, C;
+    let sel = { i: 0, j: 0 };
+    let animTimer = null;
+    let animK = -1;
+    let ord = { am: 2, an: 3, bm: 3, bn: 4 };
+
+    function mul(a, b) {
+      const m = a.length, n = b[0].length, p = b.length;
+      const c = Array.from({ length: m }, () => Array(n).fill(0));
+      for (let i = 0; i < m; i++)
+        for (let j = 0; j < n; j++)
+          for (let k = 0; k < p; k++)
+            c[i][j] += a[i][k] * b[k][j];
+      return c;
+    }
+
+    function randInt(lo, hi) {
+      return lo + Math.floor(Math.random() * (hi - lo + 1));
+    }
+
+    function loadExample(key, randomize) {
+      stopAnim();
+      if (key === '22') {
+        A = randomize
+          ? [[randInt(1, 6), randInt(1, 6)], [randInt(1, 6), randInt(1, 6)]]
+          : [[1, 2], [3, 4]];
+        B = randomize
+          ? [[randInt(1, 6), randInt(1, 6)], [randInt(1, 6), randInt(1, 6)]]
+          : [[5, 6], [7, 8]];
+      } else {
+        A = randomize
+          ? [[randInt(0, 5), randInt(0, 5), randInt(0, 5)], [randInt(0, 5), randInt(0, 5), randInt(0, 5)]]
+          : [[2, 3, 1], [4, 0, 5]];
+        B = randomize
+          ? [[randInt(1, 6), randInt(1, 6)], [randInt(1, 6), randInt(1, 6)], [randInt(1, 6), randInt(1, 6)]]
+          : [[1, 2], [3, 4], [5, 6]];
+      }
+      C = mul(A, B);
+      sel = { i: 0, j: 0 };
+      renderAll();
+      renderWrongRight();
+    }
+
+    function stopAnim() {
+      if (animTimer) { clearInterval(animTimer); animTimer = null; }
+      animK = -1;
+    }
+
+    function renderMat(el, M, kind, pairK) {
+      const rows = M.length, cols = M[0].length;
+      el.style.gridTemplateColumns = `repeat(${cols}, 46px)`;
+      el.className = 'mat';
+      el.innerHTML = '';
+      for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+          const d = document.createElement('div');
+          d.className = 'cell';
+          d.textContent = M[i][j];
+          if (kind === 'A') {
+            if (i === sel.i) d.classList.add('row-hi');
+            else d.classList.add('dim');
+            if (pairK >= 0 && i === sel.i && j === pairK) d.classList.add('pair-hi');
+          } else if (kind === 'B') {
+            if (j === sel.j) d.classList.add('col-hi');
+            else d.classList.add('dim');
+            if (pairK >= 0 && j === sel.j && i === pairK) d.classList.add('pair-hi');
+          } else {
+            d.classList.add('clickable');
+            if (i === sel.i && j === sel.j) d.classList.add('res-hi');
+            d.addEventListener('click', () => {
+              stopAnim();
+              sel = { i, j };
+              renderAll();
+            });
+          }
+          el.appendChild(d);
+        }
+      }
+    }
+
+    function renderFormula() {
+      const { i, j } = sel;
+      const terms = A[i].map((a, k) => `${a}·${B[k][j]}`).join(' + ');
+      document.getElementById('formula').innerHTML =
+        `c<sub><span class="tag-row">${i + 1}</span><span class="tag-col">${j + 1}</span></sub> = ` +
+        `<span class="tag-row">рядок ${i + 1} з A</span> · <span class="tag-col">стовпець ${j + 1} з B</span> ` +
+        `= ${terms} = <strong class="tag-res">${C[i][j]}</strong>`;
+      if (animK < 0) {
+        document.getElementById('animBar').innerHTML =
+          `Натисни «Анімація пар» — пройдемо ${A[0].length} множення(нь) для цієї клітинки.`;
+      }
+    }
+
+    function renderAnimFrame() {
+      const { i, j } = sel;
+      const n = A[0].length;
+      const parts = [];
+      let sum = 0;
+      for (let k = 0; k < n; k++) {
+        const term = A[i][k] * B[k][j];
+        if (k < animK) {
+          parts.push(`<span class="done">${A[i][k]}·${B[k][j]}</span>`);
+          sum += term;
+        } else if (k === animK) {
+          parts.push(`<span class="cur">${A[i][k]}·${B[k][j]}</span>`);
+          sum += term;
+        } else {
+          parts.push(`<span style="opacity:.35">${A[i][k]}·${B[k][j]}</span>`);
+        }
+      }
+      const bar = document.getElementById('animBar');
+      if (animK < 0) {
+        bar.textContent = '…';
+      } else if (animK < n) {
+        bar.innerHTML = `Крок k=${animK}: ${parts.join(' + ')} &nbsp;→&nbsp; часткова сума = <strong>${sum}</strong>`;
+      } else {
+        bar.innerHTML = `${parts.join(' + ')} = <strong class="done">${C[i][j]}</strong> = c<sub>${i + 1}${j + 1}</sub>`;
+      }
+      renderMat(document.getElementById('matA'), A, 'A', animK < n ? animK : -1);
+      renderMat(document.getElementById('matB'), B, 'B', animK < n ? animK : -1);
+      renderMat(document.getElementById('matC'), C, 'C', -1);
+    }
+
+    function startAnim() {
+      stopAnim();
+      animK = 0;
+      renderAnimFrame();
+      animTimer = setInterval(() => {
+        animK++;
+        if (animK > A[0].length) {
+          stopAnim();
+          animK = A[0].length;
+          renderAnimFrame();
+          return;
+        }
+        renderAnimFrame();
+      }, 700);
+    }
+
+    // Fixed clear example for element-wise vs real multiply
+    const ewA = [[1, 2], [3, 4]];
+    const ewB = [[5, 6], [7, 8]];
+    const ewC = mul(ewA, ewB); // [[19,22],[43,50]]
+    let ewSel = { i: 0, j: 0 };
+
+    function paintStatic(el, M, opts) {
+      el.innerHTML = '';
+      el.className = 'mat';
+      el.style.gridTemplateColumns = `repeat(${M[0].length}, 46px)`;
+      M.forEach((row, i) => row.forEach((v, j) => {
+        const d = document.createElement('div');
+        d.className = 'cell';
+        d.textContent = v;
+        if (opts.hiRow != null && i === opts.hiRow) d.classList.add('row-hi');
+        if (opts.hiCol != null && j === opts.hiCol) d.classList.add('col-hi');
+        if (opts.clickable) {
+          d.classList.add('clickable');
+          if (i === ewSel.i && j === ewSel.j) d.classList.add('res-hi');
+          d.onclick = () => { ewSel = { i, j }; renderWrongRight(); };
+        }
+        if (opts.dimOthers && !(opts.hiRow === i || opts.hiCol === j || (opts.clickable && i === ewSel.i && j === ewSel.j))) {
+          if (!opts.clickable) d.classList.add('dim');
+        }
+        el.appendChild(d);
+      }));
+    }
+
+    function renderWrongRight() {
+      const { i, j } = ewSel;
+      paintStatic(document.getElementById('ewA'), ewA, { hiRow: i, dimOthers: true });
+      paintStatic(document.getElementById('ewB'), ewB, { hiCol: j, dimOthers: true });
+      paintStatic(document.getElementById('ewC'), ewC, { clickable: true });
+
+      const wrong = ewA[i][j] * ewB[i][j];
+      document.getElementById('ewWrong').innerHTML =
+        `Взяли числа <strong>на однакових місцях</strong>:<br>` +
+        `a<sub>${i + 1}${j + 1}</sub>·b<sub>${i + 1}${j + 1}</sub> = ${ewA[i][j]}·${ewB[i][j]} = <strong>${wrong}</strong>.<br>` +
+        `<span class="hint">Так множать лише «поелементно» (Hadamard) — це <em>не</em> звичайний добуток матриць.</span>`;
+
+      const terms = ewA[i].map((a, k) => `${a}·${ewB[k][j]}`).join(' + ');
+      document.getElementById('ewRight').innerHTML =
+        `Взяли <span class="tag-row">рядок ${i + 1} з A</span> і <span class="tag-col">стовпець ${j + 1} з B</span>:<br>` +
+        `${terms} = <strong class="tag-res">${ewC[i][j]}</strong> = c<sub>${i + 1}${j + 1}</sub>.<br>` +
+        `<span class="hint">Одна клітинка результату = один рядок × один стовпець.</span>`;
+    }
+
+    function orderCard(title, leftName, lm, ln, rightName, rm, rn) {
+      const ok = ln === rm;
+      const innerL = `<span class="inner">${ln}</span>`;
+      const innerR = `<span class="inner">${rm}</span>`;
+      if (ok) {
+        return `
+          <h3>${title}</h3>
+          <div class="dims ok" style="margin:8px 0">
+            ${leftName}<sub>${lm}×${innerL}</sub> · ${rightName}<sub>${innerR}×${rn}</sub>
+          </div>
+          <p style="margin:0">
+            Внутрішні <strong>${ln} = ${rm}</strong> — збіглися ✓<br>
+            Результат: <strong>${lm}×${rn}</strong> (зовнішні числа).
+          </p>`;
+      }
+      return `
+        <h3>${title}</h3>
+        <div class="dims bad" style="margin:8px 0">
+          ${leftName}<sub>${lm}×${innerL}</sub> · ${rightName}<sub>${innerR}×${rn}</sub>
+        </div>
+        <p style="margin:0">
+          Внутрішні <strong>${ln} ≠ ${rm}</strong> — не збігаються ✗<br>
+          Такого добутку <strong>не існує</strong>.
+        </p>`;
+    }
+
+    function renderOrder() {
+      document.getElementById('orderA').innerHTML = `A<sub>${ord.am}×${ord.an}</sub>`;
+      document.getElementById('orderB').innerHTML = `B<sub>${ord.bm}×${ord.bn}</sub>`;
+
+      const abBox = document.getElementById('orderAB');
+      const baBox = document.getElementById('orderBA');
+      abBox.className = 'box ' + (ord.an === ord.bm ? 'ok-box' : 'bad-box');
+      baBox.className = 'box ' + (ord.bn === ord.am ? 'ok-box' : 'bad-box');
+
+      abBox.innerHTML = orderCard('Спочатку AB (A зліва)', 'A', ord.am, ord.an, 'B', ord.bm, ord.bn);
+      baBox.innerHTML = orderCard('Потім BA (B зліва)', 'B', ord.bm, ord.bn, 'A', ord.am, ord.an);
+
+      if (ord.an === ord.bm && ord.bn !== ord.am) {
+        baBox.innerHTML += `<p class="hint" style="margin:8px 0 0">Ось головне: AB порахувати можна, а BA — ні. Тому порядок важливий.</p>`;
+      }
+    }
+
+    function renderNDemo() {
+      const n = +document.getElementById('nDemo').value;
+      // concrete tiny numbers for a row of length n and a column of length n
+      const row = Array.from({ length: n }, (_, k) => k + 1);       // 1,2,3,...
+      const col = Array.from({ length: n }, (_, k) => (k + 1) * 2); // 2,4,6,...
+      const terms = row.map((a, k) => `${a}·${col[k]}`);
+      const sum = row.reduce((s, a, k) => s + a * col[k], 0);
+
+      const pairs = row.map((a, k) =>
+        `<span style="display:inline-block;margin:3px 4px;padding:4px 8px;border-radius:6px;background:#fff;border:1px solid var(--line)">` +
+        `<span class="tag-row">${a}</span>×<span class="tag-col">${col[k]}</span>` +
+        `</span>`
+      ).join('');
+
+      document.getElementById('nMulDemo').innerHTML = `
+        <div class="dims ok" style="margin-bottom:10px">
+          A<sub>…×<span class="inner">${n}</span></sub> · B<sub><span class="inner">${n}</span>×…</sub>
+          — спільна довжина <strong>${n}</strong>
+        </div>
+        <p style="margin:0 0 8px">
+          Візьмемо один рядок A: <strong class="tag-row">(${row.join(', ')})</strong>
+          і один стовпець B: <strong class="tag-col">(${col.join(', ')})</strong>.
+        </p>
+        <p style="margin:0 0 6px">Попарно (це і є ${n} множення):</p>
+        <div style="margin-bottom:10px">${pairs}</div>
+        <div class="formula">
+          c<sub>ij</sub> = ${terms.join(' + ')} = <strong>${sum}</strong>
+        </div>
+        <p class="hint" style="margin:8px 0 0">
+          Якщо б внутрішні розміри були різні — парити було б ні з чим: у рядка ${n} чисел, а в стовпця інша кількість.
+        </p>`;
+    }
+
+    function renderAll() {
+      renderMat(document.getElementById('matA'), A, 'A', -1);
+      renderMat(document.getElementById('matB'), B, 'B', -1);
+      renderMat(document.getElementById('matC'), C, 'C', -1);
+      renderFormula();
+    }
+
+    document.getElementById('example').addEventListener('change', e => loadExample(e.target.value, false));
+    document.getElementById('randBtn').addEventListener('click', () =>
+      loadExample(document.getElementById('example').value, true)
+    );
+    document.getElementById('animBtn').addEventListener('click', startAnim);
+    document.getElementById('nDemo').addEventListener('change', renderNDemo);
+    document.getElementById('swapOrder').addEventListener('click', () => {
+      ord = { am: ord.bm, an: ord.bn, bm: ord.am, bn: ord.an };
+      renderOrder();
+    });
+
+    loadExample('22', false);
+    renderOrder();
+    renderNDemo();
+  </script>
+</body>
+</html>
