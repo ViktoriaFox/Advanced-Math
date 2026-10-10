@@ -310,6 +310,89 @@
       </div>
     </section>
 
+    <!-- Matrix power -->
+    <section class="panel" id="power">
+      <h2>Степінь матриці <span class="badge extra">розбір</span></h2>
+      <p class="sub">
+        A² означає не «піднести кожне число до квадрата», а <strong>помножити матрицю саму на себе</strong>.
+      </p>
+
+      <div class="formula">A² = A · A &nbsp;&nbsp;·&nbsp;&nbsp; A³ = A · A · A = A² · A</div>
+
+      <div class="rule-card" style="margin-top:12px">
+        <h3>Чому лише квадратна?</h3>
+        <p class="hint" style="margin:0 0 10px">
+          Щоб написати A·A, внутрішні розміри мусять збігтися. У квадратної A<sub>n×n</sub>
+          це так: (n×<span class="inner" style="background:#ffe08a;padding:0 3px;border-radius:3px">n</span>)·(<span class="inner" style="background:#ffe08a;padding:0 3px;border-radius:3px">n</span>×n).
+          У прямокутної — ні.
+        </p>
+        <div class="compare">
+          <div class="box ok-box">
+            <h3>✓ Квадратна 2×2</h3>
+            <div class="dims ok" style="margin:6px 0">A<sub>2×<span class="inner">2</span></sub> · A<sub><span class="inner">2</span>×2</sub> → A²<sub>2×2</sub></div>
+            <p style="margin:0;font-size:0.92rem">Внутрішні 2 = 2 — добуток існує.</p>
+          </div>
+          <div class="box bad-box">
+            <h3>✗ Прямокутна 2×3</h3>
+            <div class="dims bad" style="margin:6px 0">A<sub>2×<span class="inner">3</span></sub> · A<sub><span class="inner">2</span>×3</sub></div>
+            <p style="margin:0;font-size:0.92rem">Внутрішні 3 ≠ 2 — A·A не визначене. Тому A² «немає».</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="rule-card">
+        <h3>Порахуй A² (клікни комірку результату)</h3>
+        <p class="hint" style="margin:0 0 10px">
+          Обидва множники — та сама матриця A. Для c<sub>ij</sub> беремо
+          <span class="tag-row">рядок i з A</span> і <span class="tag-col">стовпець j з A</span>.
+        </p>
+        <div class="size-row">
+          <button type="button" class="primary" id="powEx1">Приклад [[1,2],[3,4]]</button>
+          <button type="button" id="powEx2">Поворот [[0,−1],[1,0]]</button>
+        </div>
+
+        <div class="workspace" style="margin-top:8px">
+          <div>
+            <div class="block-label">A (редагуй)</div>
+            <div id="powA" class="mat" style="grid-template-columns:repeat(2,52px)"></div>
+          </div>
+          <div class="op">·</div>
+          <div>
+            <div class="block-label">та сама A</div>
+            <div id="powA2" class="mat" style="grid-template-columns:repeat(2,52px)"></div>
+          </div>
+          <div class="op">=</div>
+          <div>
+            <div class="block-label">A²</div>
+            <div id="powRes" class="mat" style="grid-template-columns:repeat(2,52px)"></div>
+          </div>
+        </div>
+        <div class="formula-bar" id="powFormula">Клікни комірку в A².</div>
+      </div>
+
+      <div class="rule-card">
+        <h3>Типова помилка: «піднести кожну клітинку до квадрата»</h3>
+        <p class="hint" style="margin:0 0 10px">
+          Порівняй для <em>тієї самої</em> обраної клітинки — неправильний і правильний спосіб.
+        </p>
+        <div class="compare">
+          <div class="box bad-box">
+            <h3>✗ Поелементно</h3>
+            <p id="powWrong" style="margin:0"></p>
+          </div>
+          <div class="box ok-box">
+            <h3>✓ Справжнє A²</h3>
+            <p id="powRight" style="margin:0"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="note" style="background:var(--soft);border-radius:10px;padding:12px 14px;margin-top:4px;font-size:0.95rem">
+        <strong>Ще на потім:</strong> A¹ = A. Для будь-якої квадратної матриці A визначають A⁰ = I
+        (як a⁰ = 1 для чисел). Від’ємні степені — через обернену матрицю, коли det ≠ 0; це вже наступна тема.
+      </div>
+    </section>
+
     <!-- Extra -->
     <details class="extra">
       <summary>Корисно знати <span class="badge extra">далі</span></summary>
@@ -329,14 +412,6 @@
         <h3 style="font-family:Literata,Georgia,serif;font-size:1.05rem;margin:16px 0 8px">⑥ Нульова матриця</h3>
         <div class="formula">A·0 = 0</div>
         <p>Якщо розміри сумісні, добуток із нульовою матрицею дає нульову.</p>
-
-        <h3 style="font-family:Literata,Georgia,serif;font-size:1.05rem;margin:16px 0 8px">⑦ Степінь матриці</h3>
-        <div class="formula">A² = A·A</div>
-        <p>
-          Це <strong>не</strong> піднесення кожного елемента до квадрата.
-          Цілий додатний степінь має сенс лише для <strong>квадратної</strong> матриці
-          (інакше A·A навіть не визначене за розмірами). Матриця 2×3 не має A² у звичайному сенсі.
-        </p>
       </div>
     </details>
   </div>
@@ -622,9 +697,133 @@
       renderOrder();
     });
 
+    // —— Matrix power ——
+    let Pow = [[1, 2], [3, 4]];
+    let powSel = { i: 0, j: 0 };
+    let powInputs = null;
+
+    function matPow(M, n) {
+      let R = M.map(r => r.slice());
+      for (let k = 1; k < n; k++) R = mul(R, M);
+      return R;
+    }
+
+    function ensurePowInputs() {
+      const box = document.getElementById('powA');
+      if (powInputs) return;
+      box.innerHTML = '';
+      powInputs = [];
+      for (let i = 0; i < 2; i++) {
+        for (let j = 0; j < 2; j++) {
+          const inp = document.createElement('input');
+          inp.type = 'text';
+          inp.inputMode = 'decimal';
+          inp.autocomplete = 'off';
+          inp.setAttribute('aria-label', `a${i + 1}${j + 1}`);
+          inp.style.cssText = 'width:52px;height:40px;text-align:center;font:inherit;border:1px solid var(--line);border-radius:5px;background:#fff';
+          inp.value = String(Pow[i][j]);
+          inp.addEventListener('input', () => {
+            const raw = inp.value.trim().replace(',', '.');
+            if (raw === '' || raw === '-' || raw === '.' || raw === '-.') return;
+            const v = Number(raw);
+            if (!Number.isFinite(v)) return;
+            Pow[i][j] = v;
+            renderPower(false);
+          });
+          inp.addEventListener('change', () => {
+            const raw = inp.value.trim().replace(',', '.');
+            const v = Number(raw);
+            Pow[i][j] = Number.isFinite(v) ? v : 0;
+            inp.value = String(Pow[i][j]);
+            renderPower(false);
+          });
+          powInputs.push(inp);
+          box.appendChild(inp);
+        }
+      }
+    }
+
+    function paintPowMat(el, M, opts) {
+      el.innerHTML = '';
+      el.className = 'mat';
+      el.style.gridTemplateColumns = 'repeat(2, 52px)';
+      M.forEach((row, i) => row.forEach((v, j) => {
+        const d = document.createElement('div');
+        d.className = 'cell';
+        d.style.width = '52px';
+        d.textContent = v;
+        if (opts.hiRow != null && i === opts.hiRow) d.classList.add('row-hi');
+        else if (opts.hiCol != null && j === opts.hiCol) d.classList.add('col-hi');
+        else if (opts.dimOthers) d.classList.add('dim');
+        if (opts.clickable) {
+          d.classList.add('clickable');
+          if (i === powSel.i && j === powSel.j) d.classList.add('res-hi');
+          d.onclick = () => { powSel = { i, j }; renderPower(false); };
+        }
+        el.appendChild(d);
+      }));
+    }
+
+    function renderPower(syncInputs) {
+      ensurePowInputs();
+      if (syncInputs && powInputs) {
+        powInputs.forEach((inp, idx) => {
+          if (document.activeElement === inp) return;
+          const i = Math.floor(idx / 2), j = idx % 2;
+          inp.value = String(Pow[i][j]);
+        });
+      }
+
+      const A2 = matPow(Pow, 2);
+      const { i, j } = powSel;
+
+      powInputs.forEach((inp, idx) => {
+        const r = Math.floor(idx / 2);
+        inp.style.boxShadow = r === i ? 'inset 0 0 0 2px rgba(47,111,219,0.45)' : 'none';
+        inp.style.background = r === i ? 'rgba(47,111,219,0.12)' : '#fff';
+      });
+
+      paintPowMat(document.getElementById('powA2'), Pow, { hiCol: j, dimOthers: true });
+      paintPowMat(document.getElementById('powRes'), A2, { clickable: true });
+
+      const fmtNum = (x) => (x < 0 ? `(${x})` : String(x));
+      const terms = Pow[i].map((a, k) => `${fmtNum(a)}·${fmtNum(Pow[k][j])}`).join(' + ');
+      document.getElementById('powFormula').innerHTML =
+        `(A²)<sub>${i + 1}${j + 1}</sub> = <span class="tag-row">рядок ${i + 1} з A</span> · ` +
+        `<span class="tag-col">стовпець ${j + 1} з A</span> = ${terms} = ` +
+        `<strong class="tag-res">${A2[i][j]}</strong>`;
+
+      const aij = Pow[i][j];
+      const wrong = aij * aij;
+      document.getElementById('powWrong').innerHTML =
+        `Взяли лише одне число a<sub>${i + 1}${j + 1}</sub> = ${aij} і піднесли до квадрата:<br>` +
+        `${fmtNum(aij)}² = <strong>${wrong}</strong>.<br>` +
+        `<span class="hint">Так степінь матриці <em>не</em> рахують.` +
+        (aij < 0 ? ` Без дужок −1² означало б −(1²) = −1 — тому для від’ємних пишемо (−1)².` : '') +
+        `</span>`;
+
+      document.getElementById('powRight').innerHTML =
+        `Справжнє (A²)<sub>${i + 1}${j + 1}</sub> = ${terms} = <strong class="tag-res">${A2[i][j]}</strong>.` +
+        (wrong === A2[i][j]
+          ? `<br><span class="hint">Іноді числа випадково збігаються — правило все одно інше.</span>`
+          : `<br><span class="hint">Бачиш: ${wrong} ≠ ${A2[i][j]}.</span>`);
+    }
+
+    document.getElementById('powEx1').onclick = () => {
+      Pow = [[1, 2], [3, 4]];
+      powSel = { i: 0, j: 0 };
+      renderPower(true);
+    };
+    document.getElementById('powEx2').onclick = () => {
+      Pow = [[0, -1], [1, 0]];
+      powSel = { i: 0, j: 0 };
+      renderPower(true);
+    };
+
     loadExample('22', false);
     renderOrder();
     renderNDemo();
+    renderPower(true);
   </script>
 </body>
 </html>
